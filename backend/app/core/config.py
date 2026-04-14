@@ -5,6 +5,7 @@ from typing import Optional
 class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/TARS"
+    SYNC_DATABASE_URL: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/TARS"
     REDIS_URL: str = "redis://localhost:6379/0"
     
     # Security / Auth
@@ -16,6 +17,9 @@ class Settings(BaseSettings):
     # Application State
     DEBUG: bool = True
     MODEL_PATH: str = "./ml_models/"
+
+    # Detection Thresholds
+    ANOMALY_THRESHOLD: float = 0.65
 
     model_config = SettingsConfigDict(
         env_file=".env",
