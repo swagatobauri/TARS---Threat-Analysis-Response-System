@@ -28,9 +28,14 @@ async def ingest_logs(logs: List[LogIngestRequest], db: AsyncSession = Depends(g
         new_logs.append(new_log)
         
     await db.commit()
-    
-    # Placeholder: Enqueue detection task to Celery
-    # celery_app.send_task("detect_anomalies", args=[[str(l.id) for l in new_logs]])
+
+    # Refresh to get generated UUIDs, then enqueue each for detection
+    for log in new_logs:
+        await db.refresh(log)
+
+    from app.tasks.detection import detect_anomaly
+    for log in new_logs:
+        detect_anomaly.delay(str(log.id))
     
     return {"status": "success", "ingested": len(new_logs), "message": "Logs ingested and queued for detection"}
 
