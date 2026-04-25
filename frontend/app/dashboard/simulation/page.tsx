@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Terminal, Crosshair, Zap, ShieldAlert, PlayCircle, Square, Activity } from "lucide-react";
+import { Terminal, Crosshair, Zap, ShieldAlert, PlayCircle, Square, Activity, Globe } from "lucide-react";
 import { format } from "date-fns";
 
 const API_ENDPOINT = "http://localhost:8000/api/v1/logs/ingest";
@@ -21,6 +21,7 @@ export default function SimulationPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [mode, setMode] = useState("mixed");
   const [attackType, setAttackType] = useState("brute_force");
+  const [targetUrl, setTargetUrl] = useState("10.0.0.1");
   const [logsGenerated, setLogsGenerated] = useState(0);
   const [consoleOutput, setConsoleOutput] = useState<string[]>(["[SYS] Simulation Engine Ready."]);
   
@@ -35,7 +36,7 @@ export default function SimulationPage() {
   const generateNormalLog = (): LogPayload => {
     return {
       source_ip: ipPool[Math.floor(Math.random() * ipPool.length)],
-      dest_ip: `10.0.0.${Math.floor(Math.random() * 20) + 1}`,
+      dest_ip: targetUrl,
       dest_port: [80, 443, 53, 123][Math.floor(Math.random() * 4)],
       protocol: Math.random() > 0.2 ? "TCP" : "UDP",
       bytes_sent: Math.floor(Math.random() * 4900) + 100,
@@ -53,7 +54,7 @@ export default function SimulationPage() {
       for (let i = 0; i < 20; i++) {
         logs.push({
           source_ip: attackerIp,
-          dest_ip: "10.0.0.5",
+          dest_ip: targetUrl,
           dest_port: 22,
           protocol: "TCP",
           bytes_sent: Math.floor(Math.random() * 20) + 40,
@@ -66,7 +67,7 @@ export default function SimulationPage() {
       for (let i = 0; i < 50; i++) {
         logs.push({
           source_ip: `203.0.113.${Math.floor(Math.random() * 255)}`,
-          dest_ip: "10.0.0.1",
+          dest_ip: targetUrl,
           dest_port: 80,
           protocol: "TCP",
           bytes_sent: 1000,
@@ -80,7 +81,7 @@ export default function SimulationPage() {
       for (let i = 0; i < 20; i++) {
         logs.push({
           source_ip: attackerIp,
-          dest_ip: "10.0.0.10",
+          dest_ip: targetUrl,
           dest_port: startPort + i,
           protocol: "TCP",
           bytes_sent: 0,
@@ -159,6 +160,20 @@ export default function SimulationPage() {
           </h3>
 
           <div className="space-y-6">
+            <div>
+              <label className="text-[10px] font-mono tracking-widest text-[#666] uppercase block mb-3 flex items-center gap-2">
+                <Globe size={12} /> Target URL / IP
+              </label>
+              <input
+                type="text"
+                value={targetUrl}
+                onChange={(e) => setTargetUrl(e.target.value)}
+                placeholder="e.g. mycompany.com or 10.0.0.1"
+                className="w-full border border-[#1a1a1a] bg-[#0a0a0a] px-3 py-2 text-xs font-mono text-white outline-none focus:border-[#444] transition-colors"
+                disabled={isRunning}
+              />
+            </div>
+            
             <div>
               <label className="text-[10px] font-mono tracking-widest text-[#666] uppercase block mb-3">Simulation Mode</label>
               <div className="grid grid-cols-3 gap-2">

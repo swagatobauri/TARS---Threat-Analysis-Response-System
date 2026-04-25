@@ -9,7 +9,8 @@ import {
   Globe, 
   List, 
   PlayCircle, 
-  HeartPulse 
+  HeartPulse,
+  Crosshair
 } from "lucide-react";
 
 const navItems = [
