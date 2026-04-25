@@ -60,43 +60,42 @@ celery_app.conf.beat_schedule = {
 @celery_app.task(name="tasks.run_threshold_update")
 def run_threshold_update():
     """
-    Periodic task — recalculates the anomaly detection threshold
-    based on the latest scored data distribution.
-
-    In production this would:
-    1. Pull recent AnomalyScores from the last N hours
-    2. Compute the 95th percentile of combined_score
-    3. Write the new threshold to a shared config or Redis key
-    4. Optionally retrain / warm-start the Isolation Forest
+    Periodic task (every hour) — the "Learn" heartbeat.
+    1. Pull recent AnomalyScores from the DB
+    2. Update detection thresholds in Redis via EMA
+    3. Check if enough analyst feedback has accumulated to retrain models
     """
     from app.db.database import SyncSessionLocal
     from app.db.models import AnomalyScore
-    from sqlalchemy import select, func
+    from app.ml.adaptive import ThresholdManager, ModelUpdater
+    from sqlalchemy import select, desc
 
     session = SyncSessionLocal()
 
     try:
-        avg_score = session.execute(
-            select(func.avg(AnomalyScore.combined_score))
-        ).scalar() or 0.5
+        # grab the last 1000 scored entries
+        results = session.execute(
+            select(AnomalyScore).order_by(desc(AnomalyScore.created_at)).limit(1000)
+        ).scalars().all()
 
-        count = session.execute(
-            select(func.count(AnomalyScore.id))
-        ).scalar() or 0
+        # update thresholds
+        threshold_mgr = ThresholdManager()
+        updated = threshold_mgr.update_threshold(results)
 
-        # Simple adaptive threshold: midpoint between average and 1.0
-        new_threshold = round(min(0.5 + (avg_score * 0.5), 0.90), 4)
+        # check if it's time to retrain
+        updater = ModelUpdater()
+        retrained = updater.retrain_if_ready()
 
         logger.info(
-            "Threshold update — samples=%d  avg_score=%.4f  new_threshold=%.4f",
-            count, avg_score, new_threshold,
+            "Threshold update complete — thresholds=%s  retrained=%s  samples=%d",
+            updated, retrained, len(results),
         )
 
         return {
             "status": "updated",
-            "samples": count,
-            "avg_score": round(avg_score, 4),
-            "new_threshold": new_threshold,
+            "thresholds": updated,
+            "samples_used": len(results),
+            "retrained": retrained,
         }
 
     except Exception as exc:
@@ -105,3 +104,4 @@ def run_threshold_update():
 
     finally:
         session.close()
+
