@@ -13,13 +13,12 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { name: "Dashboard", href: "/", icon: Home },
-  { name: "Threat Feed", href: "/threats", icon: ShieldAlert },
-  { name: "Anomaly Graph", href: "/graph", icon: Activity },
-  { name: "IP Intelligence", href: "/intelligence", icon: Globe },
-  { name: "Action Logs", href: "/logs", icon: List },
-  { name: "Attack Replay", href: "/replay", icon: PlayCircle },
-  { name: "System Health", href: "/health", icon: HeartPulse },
+  { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "Threat Feed", href: "/dashboard/threats", icon: ShieldAlert },
+  { name: "IP Intelligence", href: "/dashboard/ip-intelligence", icon: Globe },
+  { name: "Action Logs", href: "/dashboard/action-logs", icon: List },
+  { name: "Attack Replay", href: "/dashboard/replay", icon: PlayCircle },
+  { name: "System Health", href: "/dashboard/health", icon: HeartPulse },
 ];
 
 export default function Sidebar() {
