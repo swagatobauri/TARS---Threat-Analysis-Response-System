@@ -18,6 +18,7 @@ const navItems = [
   { name: "IP Intelligence", href: "/dashboard/ip-intelligence", icon: Globe },
   { name: "Action Logs", href: "/dashboard/action-logs", icon: List },
   { name: "Attack Replay", href: "/dashboard/replay", icon: PlayCircle },
+  { name: "War Games", href: "/dashboard/simulation", icon: Crosshair },
   { name: "System Health", href: "/dashboard/health", icon: HeartPulse },
 ];
 

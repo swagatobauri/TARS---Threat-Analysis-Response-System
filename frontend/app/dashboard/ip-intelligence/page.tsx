@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { Search, Globe, ShieldAlert, Activity } from "lucide-react";
-import { BarChart, Bar, ResponsiveContainer, Tooltip } from "recharts";
+import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { format } from "date-fns";
 
 export default function IPIntelligencePage() {
