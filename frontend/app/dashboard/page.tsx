@@ -123,6 +123,51 @@ export default function DashboardPage() {
 
       </div>
 
+      {/* AI Agent Intelligence */}
+      <div className="border border-[#1a1a1a] bg-[#050505]">
+        <div className="px-4 py-3 border-b border-[#1a1a1a] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${sim.state.agentActive ? "bg-[#00ff88] animate-pulse" : "bg-[#333]"}`} />
+            <h2 className="font-mono text-xs tracking-widest text-[#888] uppercase">
+              TARS AI Agent {sim.state.agentActive ? "(LLaMA 3.3 70B)" : "(Offline)"}
+            </h2>
+          </div>
+          {sim.state.agentMessages.length > 0 && (
+            <span className="font-mono text-[9px] text-[#444]">
+              {sim.state.agentMessages[sim.state.agentMessages.length - 1]?.tokens || 0} tokens
+            </span>
+          )}
+        </div>
+        <div className="max-h-[300px] overflow-y-auto">
+          {sim.state.agentMessages.length === 0 ? (
+            <div className="p-8 text-center font-mono text-[#333] text-xs tracking-widest">
+              {sim.state.agentActive
+                ? "Agent is processing..."
+                : "AI agent activates during simulation. Add GROQ_API_KEY to frontend/.env.local for live LLM reasoning."}
+            </div>
+          ) : (
+            [...sim.state.agentMessages].reverse().map(msg => (
+              <div key={msg.id} className="px-4 py-4 border-b border-[#111]">
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`font-mono text-[10px] font-bold tracking-widest ${
+                    msg.verdict === "NEUTRALIZE" ? "text-[#cc0000]" :
+                    msg.verdict === "ESCALATE" ? "text-[#ff6600]" :
+                    msg.verdict === "MONITOR" ? "text-[#ffaa00]" :
+                    msg.verdict === "SAFE" ? "text-[#00ff88]" : "text-[#555]"
+                  }`}>
+                    VERDICT: {msg.verdict}
+                  </span>
+                  <span className="font-mono text-[9px] text-[#444]">
+                    {format(new Date(msg.timestamp), "HH:mm:ss")}
+                  </span>
+                </div>
+                <p className="font-mono text-xs text-[#aaa] leading-relaxed">{msg.analysis}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       {/* CTA if not running */}
       {!sim.state.isRunning && events.length === 0 && (
         <div className="border-2 border-dashed border-[#1a1a1a] p-8 text-center">

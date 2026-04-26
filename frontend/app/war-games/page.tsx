@@ -95,6 +95,8 @@ export default function WarGamesPage() {
 
   const simRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const consoleEndRef = useRef<HTMLDivElement>(null);
+  const tickCount = useRef(0);
+  const lastMemory = useRef("");
 
   const log = useCallback((msg: string) => {
     setConsoleLogs(p => [...p, `${format(new Date(), "HH:mm:ss.SSS")}  ${msg}`].slice(-60));
@@ -145,6 +147,33 @@ export default function WarGamesPage() {
 
     // Push to shared store (Dashboard reads this)
     sim.pushEvents(batch);
+
+    // Call real AI agent every 5 ticks
+    tickCount.current += 1;
+    if (tickCount.current % 5 === 0 && batch.some(e => e.attack_type !== "normal")) {
+      fetch("/api/agent/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ events: batch.slice(-30), memory: lastMemory.current }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          lastMemory.current = data.analysis?.slice(0, 200) || "";
+          sim.pushAgentMessage({
+            id: crypto.randomUUID(),
+            timestamp: new Date().toISOString(),
+            analysis: data.analysis,
+            verdict: data.verdict,
+            model: data.model || "fallback",
+            tokens: data.tokens || 0,
+            agentActive: data.agentActive,
+          });
+          if (data.agentActive) {
+            log(`[AI] ${data.verdict} — ${data.analysis.slice(0, 80)}...`);
+          }
+        })
+        .catch(() => {});
+    }
   }, [mode, attackType, targetUrl, log, sim]);
 
   const toggle = () => {
@@ -152,12 +181,14 @@ export default function WarGamesPage() {
       if (simRef.current) clearInterval(simRef.current);
       simRef.current = null;
       sim.setRunning(false);
+      tickCount.current = 0;
       log("[SYS] Simulation terminated. Data persists in Mission Control.");
     } else {
       if (!targetUrl.trim()) { log("[ERROR] Target URL/IP required."); return; }
       sim.setTarget(targetUrl);
       sim.setRunning(true);
-      log(`[SYS] Engaging ${targetUrl} — streaming to Mission Control`);
+      tickCount.current = 0;
+      log(`[SYS] Engaging ${targetUrl} — AI agent armed`);
       simRef.current = setInterval(tick, 1000);
     }
   };

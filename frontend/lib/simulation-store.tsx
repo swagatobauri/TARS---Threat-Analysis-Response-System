@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useRef } from "react";
+import React, { createContext, useContext, useState, useCallback } from "react";
 
 // ── Types ──
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
@@ -26,20 +26,34 @@ export type AgentAction = {
   risk_level: RiskLevel;
 };
 
+export type AgentMessage = {
+  id: string;
+  timestamp: string;
+  analysis: string;
+  verdict: string;
+  model: string;
+  tokens: number;
+  agentActive: boolean;
+};
+
 type SimState = {
   events: SimEvent[];
   actions: AgentAction[];
+  agentMessages: AgentMessage[];
   blockedIps: Set<string>;
   isRunning: boolean;
   target: string;
+  agentActive: boolean;
 };
 
 type SimStore = {
   state: SimState;
   pushEvents: (events: SimEvent[]) => void;
   pushAction: (action: AgentAction) => void;
+  pushAgentMessage: (msg: AgentMessage) => void;
   setRunning: (running: boolean) => void;
   setTarget: (target: string) => void;
+  setAgentActive: (active: boolean) => void;
   clearAll: () => void;
   getStats: () => {
     totalEvents: number;
@@ -57,9 +71,11 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const [state, setState] = useState<SimState>({
     events: [],
     actions: [],
+    agentMessages: [],
     blockedIps: new Set(),
     isRunning: false,
     target: "",
+    agentActive: false,
   });
 
   const pushEvents = useCallback((newEvents: SimEvent[]) => {
@@ -71,9 +87,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         if (e.action === "BLOCK_IP" && !blockedIps.has(e.source_ip)) {
           blockedIps.add(e.source_ip);
           newActions.push({
-            id: crypto.randomUUID(),
-            timestamp: e.timestamp,
-            ip: e.source_ip,
+            id: crypto.randomUUID(), timestamp: e.timestamp, ip: e.source_ip,
             action: "BLOCK_IP",
             reason: `Autonomous block: ${e.attack_type} detected (score: ${e.anomaly_score.toFixed(3)})`,
             risk_level: e.risk_level,
@@ -81,9 +95,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         }
         if (e.action === "RATE_LIMIT" && !blockedIps.has(e.source_ip)) {
           newActions.push({
-            id: crypto.randomUUID(),
-            timestamp: e.timestamp,
-            ip: e.source_ip,
+            id: crypto.randomUUID(), timestamp: e.timestamp, ip: e.source_ip,
             action: "RATE_LIMIT",
             reason: `Throttled: anomalous ${e.attack_type} traffic pattern`,
             risk_level: e.risk_level,
@@ -104,6 +116,14 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     setState(prev => ({ ...prev, actions: [...prev.actions, action].slice(-200) }));
   }, []);
 
+  const pushAgentMessage = useCallback((msg: AgentMessage) => {
+    setState(prev => ({
+      ...prev,
+      agentMessages: [...prev.agentMessages, msg].slice(-30),
+      agentActive: msg.agentActive,
+    }));
+  }, []);
+
   const setRunning = useCallback((running: boolean) => {
     setState(prev => ({ ...prev, isRunning: running }));
   }, []);
@@ -112,8 +132,12 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     setState(prev => ({ ...prev, target }));
   }, []);
 
+  const setAgentActive = useCallback((active: boolean) => {
+    setState(prev => ({ ...prev, agentActive: active }));
+  }, []);
+
   const clearAll = useCallback(() => {
-    setState({ events: [], actions: [], blockedIps: new Set(), isRunning: false, target: "" });
+    setState({ events: [], actions: [], agentMessages: [], blockedIps: new Set(), isRunning: false, target: "", agentActive: false });
   }, []);
 
   const getStats = useCallback(() => {
@@ -130,7 +154,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   }, [state.events, state.blockedIps]);
 
   return (
-    <SimContext.Provider value={{ state, pushEvents, pushAction, setRunning, setTarget, clearAll, getStats }}>
+    <SimContext.Provider value={{ state, pushEvents, pushAction, pushAgentMessage, setRunning, setTarget, setAgentActive, clearAll, getStats }}>
       {children}
     </SimContext.Provider>
   );
