@@ -162,7 +162,22 @@ class ReasoningEngine:
         """
         Evaluates the context and returns the final AgentDecision.
         """
+        from app.safety.fp_mitigation import FalsePositiveMitigator
+        
+        # 1. FP Mitigation Check
+        mitigator = FalsePositiveMitigator()
+        history_dicts = [{"action": t.action_taken, "score": t.confidence_score} for t in ctx.recent_decisions] if ctx.recent_decisions else []
+        fp_assessment = mitigator.evaluate_for_fp_risk(ctx.anomaly_score, ctx.source_ip, history_dicts)
+        
+        # Adjust confidence based on FP risk
+        ctx.confidence = fp_assessment.adjusted_confidence
+        
         reasoning_chain = []
+        if fp_assessment.risk_factors:
+            reasoning_chain.append(f"FP Risk {fp_assessment.fp_risk_score:.2f} Factors: {', '.join(fp_assessment.risk_factors)}")
+        reasoning_chain.append(f"FP Mitigation Recommendation: {fp_assessment.recommendation}")
+
+        # 2. Evaluate context with adjusted confidence
         action_scores = self.evaluate_context(ctx, reasoning_chain)
 
         # Sort actions by score descending

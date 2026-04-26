@@ -50,6 +50,10 @@ celery_app.conf.beat_schedule = {
         "task": "tasks.run_threshold_update",
         "schedule": crontab(minute=0),   # every hour on the hour
     },
+    "expire-pending-approvals": {
+        "task": "tasks.expire_pending_approvals",
+        "schedule": 60.0,                # every 60 seconds
+    },
 }
 
 
