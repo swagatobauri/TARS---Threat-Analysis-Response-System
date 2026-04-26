@@ -9,36 +9,9 @@ import {
 import { format } from "date-fns";
 import { useSimulation } from "@/lib/simulation-store";
 
-// ── Anomaly Scorer ──
-function scoreAnomaly(bytes: number, dur: number, port: number, count: number): number {
-  let s = 0;
-  if (bytes < 60) s += 0.25;
-  if (dur < 0.05) s += 0.2;
-  if (![80, 443, 53, 123].includes(port)) s += 0.15;
-  s += Math.min(count / 100, 0.4);
-  return Math.min(s + Math.random() * 0.05, 1.0);
-}
-
-function riskOf(s: number) {
-  if (s >= 0.8) return "CRITICAL" as const;
-  if (s >= 0.6) return "HIGH" as const;
-  if (s >= 0.35) return "MEDIUM" as const;
-  return "LOW" as const;
-}
-
-function actionOf(r: string) {
-  if (r === "CRITICAL") return "BLOCK_IP";
-  if (r === "HIGH") return "RATE_LIMIT";
-  if (r === "MEDIUM") return "ALERT";
-  return "MONITOR";
-}
-
 const riskColor: Record<string, string> = {
   LOW: "text-[#555]", MEDIUM: "text-[#ffaa00]", HIGH: "text-[#ff6600]", CRITICAL: "text-[#cc0000]",
 };
-
-const attackerIps = ["185.15.54.212", "45.33.32.156", "91.240.118.172", "198.51.100.23"];
-const ipPool = Array.from({ length: 50 }, (_, i) => `192.168.1.${i + 10}`);
 
 const ATTACK_VECTORS = [
   { id: "brute_force", label: "Brute Force", icon: Zap, desc: "SSH credential stuffing — port 22" },
@@ -49,151 +22,28 @@ const ATTACK_VECTORS = [
   { id: "zero_day", label: "Zero-Day", icon: Skull, desc: "Unknown CVE exploitation" },
 ];
 
-function generateAttack(aType: string, dest: string) {
-  const batch: any[] = [];
-  const srcIp = attackerIps[Math.floor(Math.random() * attackerIps.length)];
-
-  const configs: Record<string, { count: number; port: number; bytes: number; dur: number }> = {
-    brute_force: { count: 25 + Math.floor(Math.random() * 30), port: 22, bytes: 45, dur: 0.02 },
-    ddos: { count: 60 + Math.floor(Math.random() * 80), port: 80, bytes: 1000, dur: 0.01 },
-    port_scan: { count: 20, port: 0, bytes: 0, dur: 0.001 },
-    sql_injection: { count: 12 + Math.floor(Math.random() * 8), port: 3306, bytes: 200, dur: 0.03 },
-    ransomware: { count: 8 + Math.floor(Math.random() * 5), port: 445, bytes: 50, dur: 0.005 },
-    zero_day: { count: 3 + Math.floor(Math.random() * 4), port: Math.floor(Math.random() * 65535), bytes: 30, dur: 0.002 },
-  };
-
-  const cfg = configs[aType] || configs.brute_force;
-  const base = Math.floor(Math.random() * 1000);
-
-  for (let i = 0; i < cfg.count; i++) {
-    const port = aType === "port_scan" ? base + i : cfg.port;
-    const sc = aType === "ransomware" || aType === "zero_day"
-      ? Math.min(0.85 + Math.random() * 0.15, 1.0)
-      : scoreAnomaly(cfg.bytes, cfg.dur, port, cfg.count);
-    const rl = aType === "ransomware" || aType === "zero_day" ? "CRITICAL" as const : riskOf(sc);
-    batch.push({
-      id: crypto.randomUUID(),
-      timestamp: new Date().toISOString(),
-      source_ip: aType === "ddos" ? `203.0.113.${Math.floor(Math.random() * 255)}` : srcIp,
-      dest, port, anomaly_score: sc, risk_level: rl,
-      action: actionOf(rl), attack_type: aType,
-    });
-  }
-  return batch;
-}
-
 // ── Page ──
 export default function WarGamesPage() {
   const sim = useSimulation();
-  const [mode, setMode] = useState("mixed");
-  const [attackType, setAttackType] = useState("brute_force");
-  const [targetUrl, setTargetUrl] = useState("");
-  const [consoleLogs, setConsoleLogs] = useState<string[]>([
-    "[SYS] TARS War Games Engine initialized.",
-    "[SYS] Events will flow to Mission Control in real-time.",
-  ]);
-
-  const simRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const consoleEndRef = useRef<HTMLDivElement>(null);
-  const tickCount = useRef(0);
-  const lastMemory = useRef("");
-
-  const log = useCallback((msg: string) => {
-    setConsoleLogs(p => [...p, `${format(new Date(), "HH:mm:ss.SSS")}  ${msg}`].slice(-60));
-  }, []);
 
   useEffect(() => {
     consoleEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [consoleLogs]);
-
-  const tick = useCallback(() => {
-    const dest = targetUrl;
-    let batch: any[] = [];
-
-    // Normal traffic
-    if (mode === "normal" || mode === "mixed") {
-      const n = Math.floor(Math.random() * 8) + 5;
-      for (let i = 0; i < n; i++) {
-        const port = [80, 443, 53, 123][Math.floor(Math.random() * 4)];
-        const bytes = Math.floor(Math.random() * 4900) + 100;
-        const dur = Math.random() * 4.9 + 0.1;
-        const sc = scoreAnomaly(bytes, dur, port, 1);
-        batch.push({
-          id: crypto.randomUUID(), timestamp: new Date().toISOString(),
-          source_ip: ipPool[Math.floor(Math.random() * ipPool.length)],
-          dest, port, anomaly_score: sc, risk_level: riskOf(sc),
-          action: actionOf(riskOf(sc)), attack_type: "normal",
-        });
-      }
-      log(`Baseline: ${n} events → ${dest}`);
-    }
-
-    // Attack traffic
-    const doAttack = mode === "attack_only" || (mode === "mixed" && Math.random() < 0.35);
-    if (doAttack) {
-      const aType = mode === "mixed"
-        ? ATTACK_VECTORS[Math.floor(Math.random() * ATTACK_VECTORS.length)].id
-        : attackType;
-      const attackBatch = generateAttack(aType, dest);
-      batch = [...batch, ...attackBatch];
-      const avg = attackBatch.reduce((a: number, e: any) => a + e.anomaly_score, 0) / attackBatch.length;
-      log(`[THREAT] ${aType.toUpperCase()} | ${attackBatch.length} payloads | score: ${avg.toFixed(3)}`);
-
-      const crits = attackBatch.filter((e: any) => e.risk_level === "CRITICAL");
-      if (crits.length > 0) {
-        log(`[AGENT] Autonomous response: ${crits.length} IPs → BLOCK_IP`);
-      }
-    }
-
-    // Push to shared store (Dashboard reads this)
-    sim.pushEvents(batch);
-
-    // Call real AI agent every 5 ticks
-    tickCount.current += 1;
-    if (tickCount.current % 5 === 0 && batch.some(e => e.attack_type !== "normal")) {
-      fetch("/api/agent/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ events: batch.slice(-30), memory: lastMemory.current }),
-      })
-        .then(r => r.json())
-        .then(data => {
-          lastMemory.current = data.analysis?.slice(0, 200) || "";
-          sim.pushAgentMessage({
-            id: crypto.randomUUID(),
-            timestamp: new Date().toISOString(),
-            analysis: data.analysis,
-            verdict: data.verdict,
-            model: data.model || "fallback",
-            tokens: data.tokens || 0,
-            agentActive: data.agentActive,
-          });
-          if (data.agentActive) {
-            log(`[AI] ${data.verdict} — ${data.analysis.slice(0, 80)}...`);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [mode, attackType, targetUrl, log, sim]);
+  }, [sim.state.logs]);
 
   const toggle = () => {
     if (sim.state.isRunning) {
-      if (simRef.current) clearInterval(simRef.current);
-      simRef.current = null;
       sim.setRunning(false);
-      tickCount.current = 0;
-      log("[SYS] Simulation terminated. Data persists in Mission Control.");
+      sim.pushLog("[SYS] Simulation terminated. Data persists in Mission Control.");
     } else {
-      if (!targetUrl.trim()) { log("[ERROR] Target URL/IP required."); return; }
-      sim.setTarget(targetUrl);
+      if (!sim.state.target.trim()) {
+        sim.pushLog("[ERROR] Target URL/IP required.");
+        return;
+      }
       sim.setRunning(true);
-      tickCount.current = 0;
-      log(`[SYS] Engaging ${targetUrl} — AI agent armed`);
-      simRef.current = setInterval(tick, 1000);
+      sim.pushLog(`[SYS] Engaging ${sim.state.target} — AI agent armed`);
     }
   };
-
-  useEffect(() => () => { if (simRef.current) clearInterval(simRef.current); }, []);
 
   const stats = sim.getStats();
 
@@ -228,7 +78,7 @@ export default function WarGamesPage() {
         <div className="col-span-3 border-r border-[#1a1a1a] p-5 flex flex-col bg-[#050505] overflow-y-auto">
           <div className="mb-5">
             <label className="text-[9px] font-mono tracking-widest text-[#555] uppercase block mb-2">Target URL / IP</label>
-            <input type="text" value={targetUrl} onChange={e => setTargetUrl(e.target.value)} placeholder="e.g. myapp.com" disabled={sim.state.isRunning}
+            <input type="text" value={sim.state.target} onChange={e => sim.setTarget(e.target.value)} placeholder="e.g. myapp.com" disabled={sim.state.isRunning}
               className="w-full border border-[#1a1a1a] bg-black px-3 py-2.5 text-sm font-mono text-white outline-none focus:border-[#cc0000] transition-colors disabled:opacity-30" />
           </div>
 
@@ -236,23 +86,23 @@ export default function WarGamesPage() {
             <label className="text-[9px] font-mono tracking-widest text-[#555] uppercase block mb-2">Mode</label>
             <div className="grid grid-cols-3 gap-1">
               {["normal", "mixed", "attack_only"].map(m => (
-                <button key={m} onClick={() => setMode(m)} disabled={sim.state.isRunning}
-                  className={`py-1.5 text-[8px] font-mono tracking-widest uppercase border ${mode === m ? "bg-[#111] border-[#cc0000] text-[#cc0000]" : "border-[#1a1a1a] text-[#555]"}`}>
+                <button key={m} onClick={() => sim.setMode(m)} disabled={sim.state.isRunning}
+                  className={`py-1.5 text-[8px] font-mono tracking-widest uppercase border ${sim.state.mode === m ? "bg-[#111] border-[#cc0000] text-[#cc0000]" : "border-[#1a1a1a] text-[#555]"}`}>
                   {m.replace("_", " ")}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className={`mb-6 ${mode === "normal" ? "opacity-20 pointer-events-none" : ""}`}>
+          <div className={`mb-6 ${sim.state.mode === "normal" ? "opacity-20 pointer-events-none" : ""}`}>
             <label className="text-[9px] font-mono tracking-widest text-[#555] uppercase block mb-2">Attack Vector</label>
             <div className="space-y-1">
               {ATTACK_VECTORS.map(a => (
-                <button key={a.id} onClick={() => setAttackType(a.id)} disabled={sim.state.isRunning}
-                  className={`w-full py-2 px-3 flex items-center gap-3 text-left border ${attackType === a.id ? "bg-[#1a0505] border-[#cc0000]" : "border-[#1a1a1a]"}`}>
-                  <a.icon size={14} className={attackType === a.id ? "text-[#cc0000]" : "text-[#444]"} />
+                <button key={a.id} onClick={() => sim.setAttackType(a.id)} disabled={sim.state.isRunning}
+                  className={`w-full py-2 px-3 flex items-center gap-3 text-left border ${sim.state.attackType === a.id ? "bg-[#1a0505] border-[#cc0000]" : "border-[#1a1a1a]"}`}>
+                  <a.icon size={14} className={sim.state.attackType === a.id ? "text-[#cc0000]" : "text-[#444]"} />
                   <div>
-                    <div className={`text-[10px] font-mono tracking-widest uppercase ${attackType === a.id ? "text-[#cc0000]" : "text-[#666]"}`}>{a.label}</div>
+                    <div className={`text-[10px] font-mono tracking-widest uppercase ${sim.state.attackType === a.id ? "text-[#cc0000]" : "text-[#666]"}`}>{a.label}</div>
                     <div className="text-[8px] font-mono text-[#444]">{a.desc}</div>
                   </div>
                 </button>
@@ -278,7 +128,7 @@ export default function WarGamesPage() {
 
           {/* Console */}
           <div className="h-36 border-b border-[#1a1a1a] bg-black p-3 overflow-y-auto flex-shrink-0 font-mono text-[10px] leading-relaxed">
-            {consoleLogs.map((l, i) => (
+            {sim.state.logs.map((l, i) => (
               <div key={i} className={
                 l.includes("[AGENT]") ? "text-[#00ff88] font-bold" :
                 l.includes("[THREAT]") ? "text-[#cc0000]" :
