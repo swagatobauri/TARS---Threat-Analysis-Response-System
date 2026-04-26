@@ -76,10 +76,15 @@ export default function WarGamesPage() {
       <div className="flex-1 grid grid-cols-12 gap-0 min-h-0 overflow-hidden">
         {/* Controls */}
         <div className="col-span-3 border-r border-[#1a1a1a] p-5 flex flex-col bg-[#050505] overflow-y-auto">
-          <div className="mb-5">
-            <label className="text-[9px] font-mono tracking-widest text-[#555] uppercase block mb-2">Target URL / IP</label>
-            <input type="text" value={sim.state.target} onChange={e => sim.setTarget(e.target.value)} placeholder="e.g. myapp.com" disabled={sim.state.isRunning}
-              className="w-full border border-[#1a1a1a] bg-black px-3 py-2.5 text-sm font-mono text-white outline-none focus:border-[#cc0000] transition-colors disabled:opacity-30" />
+          <div className="mb-5 flex items-end gap-2">
+            <div className="flex-1">
+              <label className="text-[9px] font-mono tracking-widest text-[#555] uppercase block mb-2">Target URL / IP</label>
+              <input type="text" value={sim.state.target} onChange={e => sim.setTarget(e.target.value)} placeholder="e.g. myapp.com" disabled={sim.state.isRunning}
+                className="w-full border border-[#1a1a1a] bg-black px-3 py-2.5 text-sm font-mono text-white outline-none focus:border-[#cc0000] transition-colors disabled:opacity-30" />
+            </div>
+            <button onClick={sim.clearAll} disabled={sim.state.isRunning} className="px-3 py-2.5 border border-[#1a1a1a] bg-[#111] text-[#555] hover:text-white transition-colors text-xs font-mono disabled:opacity-30">
+              CLEAR
+            </button>
           </div>
 
           <div className="mb-5">

@@ -113,8 +113,7 @@ function actionOf(r: string) {
   return "MONITOR";
 }
 
-const attackerIps = ["185.15.54.212", "45.33.32.156", "91.240.118.172", "198.51.100.23"];
-const ipPool = Array.from({ length: 50 }, (_, i) => `192.168.1.${i + 10}`);
+// Removed static IP pools in favor of dynamic randomization
 
 const ATTACK_VECTORS = [
   { id: "brute_force", port: 22, bytes: 45, dur: 0.02 },
@@ -150,6 +149,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const tickCount = useRef(0);
   const lastMemory = useRef("");
+  const mainAttackerRef = useRef("185.15.54.212");
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -251,7 +251,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
           const sc = scoreAnomaly(bytes, dur, port, 1);
           batch.push({
             id: crypto.randomUUID(), timestamp: new Date().toISOString(),
-            source_ip: ipPool[Math.floor(Math.random() * ipPool.length)],
+            source_ip: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
             dest, port, anomaly_score: sc, risk_level: riskOf(sc),
             action: actionOf(riskOf(sc)), attack_type: "normal",
           });
@@ -268,10 +268,15 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         
         const cfg = ATTACK_VECTORS.find(v => v.id === aType) || ATTACK_VECTORS[0];
         
+        // Randomize the main attacker occasionally
+        if (Math.random() < 0.1) {
+          mainAttackerRef.current = `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+        }
+        
         // Generate dynamic IPs for continuous blocking, keeping some static for repeat offenses
-        const useStaticIp = Math.random() < 0.4;
+        const useStaticIp = Math.random() < 0.7;
         const srcIp = useStaticIp 
-          ? attackerIps[Math.floor(Math.random() * attackerIps.length)]
+          ? mainAttackerRef.current
           : `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
           
         const count = aType === "ddos" ? 80 : aType === "brute_force" ? 30 : 15;
@@ -346,7 +351,17 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   }, [state.isRunning, tick]);
 
   const setRunning = useCallback((running: boolean) => setState(p => ({ ...p, isRunning: running })), []);
-  const setTarget = useCallback((target: string) => setState(p => ({ ...p, target })), []);
+  const setTarget = useCallback((target: string) => setState(p => ({ 
+    ...p, 
+    target,
+    events: [],
+    actions: [],
+    agentMessages: [],
+    logs: [`[SYS] Target acquired: ${target}. Sensors recalibrated.`],
+    blockedIps: new Set(),
+    resolvedEvents: new Set(),
+    cumulativeStats: { totalEvents: 0, totalBlocked: 0, tp: 0, fp: 0, fn: 0 }
+  })), []);
   const setMode = useCallback((mode: string) => setState(p => ({ ...p, mode })), []);
   const setAttackType = useCallback((at: string) => setState(p => ({ ...p, attackType: at })), []);
   const setAgentActive = useCallback((a: boolean) => setState(p => ({ ...p, agentActive: a })), []);
@@ -355,7 +370,16 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     next.add(id);
     return { ...p, resolvedEvents: next };
   }), []);
-  const clearAll = useCallback(() => setState(p => ({ ...p, events: [], actions: [], agentMessages: [], logs: [], blockedIps: new Set(), resolvedEvents: new Set() })), []);
+  const clearAll = useCallback(() => setState(p => ({ 
+    ...p, 
+    events: [], 
+    actions: [], 
+    agentMessages: [], 
+    logs: ["[SYS] Simulation engine reset."], 
+    blockedIps: new Set(), 
+    resolvedEvents: new Set(),
+    cumulativeStats: { totalEvents: 0, totalBlocked: 0, tp: 0, fp: 0, fn: 0 }
+  })), []);
 
   const getStats = useCallback(() => {
     const events = state.events;
