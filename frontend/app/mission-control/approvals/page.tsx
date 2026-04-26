@@ -44,7 +44,7 @@ export default function ApprovalsPage() {
 
   // ── Merge Logic ──
   const simApprovals = sim.state.events
-    .filter(e => e.risk_level === "CRITICAL" && e.action === "BLOCK_IP")
+    .filter(e => e.risk_level === "CRITICAL" && e.action === "BLOCK_IP" && !sim.state.resolvedEvents.has(e.id))
     .map(e => ({
       id: `sim-${e.id}`,
       proposed_action: "BLOCK",
@@ -52,16 +52,19 @@ export default function ApprovalsPage() {
       expires_at: new Date(new Date(e.timestamp).getTime() + 5 * 60000).toISOString(),
       threat_event_id: e.id,
       reasoning_summary: `[SIMULATION] Critical ${e.attack_type} detected from ${e.source_ip}. Automated block proposed.`,
-      is_simulated: true
+      is_simulated: true,
+      original_sim_id: e.id
     }));
 
   const pendingApprovals = [...simApprovals, ...(apiApprovals ?? [])];
 
   const handleApprove = async (id: string) => {
     if (id.startsWith("sim-")) {
-      // For simulation, just remove it locally (if we had a way to track resolved sim events)
-      // For now, we'll just mock the success
-      alert("Simulation Approval Processed: Action Executed.");
+      const approval = simApprovals.find(a => a.id === id);
+      if (approval) {
+        sim.resolveEvent(approval.original_sim_id);
+        sim.pushLog(`[SYS] Simulation Action Approved: Blocking ${approval.threat_event_id}`);
+      }
       return;
     }
     try {
@@ -89,7 +92,11 @@ export default function ApprovalsPage() {
     if (!rejectReason.trim()) return;
 
     if (id.startsWith("sim-")) {
-      alert(`Simulation Rejection Processed: ${rejectReason}`);
+      const approval = simApprovals.find(a => a.id === id);
+      if (approval) {
+        sim.resolveEvent(approval.original_sim_id);
+        sim.pushLog(`[SYS] Simulation Action Rejected: ${rejectReason}`);
+      }
       setRejectingId(null);
       setRejectReason("");
       return;

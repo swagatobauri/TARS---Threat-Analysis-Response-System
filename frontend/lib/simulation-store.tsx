@@ -42,6 +42,7 @@ type SimState = {
   agentMessages: AgentMessage[];
   logs: string[];
   blockedIps: Set<string>;
+  resolvedEvents: Set<string>;
   isRunning: boolean;
   target: string;
   agentActive: boolean;
@@ -60,6 +61,7 @@ type SimStore = {
   setAgentActive: (active: boolean) => void;
   setMode: (mode: string) => void;
   setAttackType: (type: string) => void;
+  resolveEvent: (id: string) => void;
   clearAll: () => void;
   getStats: () => {
     totalEvents: number;
@@ -116,6 +118,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     agentMessages: [],
     logs: ["[SYS] TARS Simulation Engine initialized."],
     blockedIps: new Set(),
+    resolvedEvents: new Set(),
     isRunning: false,
     target: "",
     agentActive: false,
@@ -137,6 +140,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
           ...prev,
           ...parsed,
           blockedIps: new Set(parsed.blockedIps || []),
+          resolvedEvents: new Set(parsed.resolvedEvents || []),
           isRunning: false
         }));
       } catch (e) {}
@@ -145,10 +149,11 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
 
   // Save to localStorage on change
   useEffect(() => {
-    const { blockedIps, ...rest } = state;
+    const { blockedIps, resolvedEvents, ...rest } = state;
     localStorage.setItem("tars_sim_state", JSON.stringify({
       ...rest,
-      blockedIps: Array.from(blockedIps)
+      blockedIps: Array.from(blockedIps),
+      resolvedEvents: Array.from(resolvedEvents)
     }));
   }, [state]);
 
@@ -305,7 +310,12 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const setMode = useCallback((mode: string) => setState(p => ({ ...p, mode })), []);
   const setAttackType = useCallback((at: string) => setState(p => ({ ...p, attackType: at })), []);
   const setAgentActive = useCallback((a: boolean) => setState(p => ({ ...p, agentActive: a })), []);
-  const clearAll = useCallback(() => setState(p => ({ ...p, events: [], actions: [], agentMessages: [], logs: [], blockedIps: new Set() })), []);
+  const resolveEvent = useCallback((id: string) => setState(p => {
+    const next = new Set(p.resolvedEvents);
+    next.add(id);
+    return { ...p, resolvedEvents: next };
+  }), []);
+  const clearAll = useCallback(() => setState(p => ({ ...p, events: [], actions: [], agentMessages: [], logs: [], blockedIps: new Set(), resolvedEvents: new Set() })), []);
 
   const getStats = useCallback(() => {
     const events = state.events;
@@ -320,7 +330,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   }, [state.events, state.blockedIps]);
 
   return (
-    <SimContext.Provider value={{ state, pushEvents, pushAction: () => {}, pushAgentMessage, pushLog, setRunning, setTarget, setAgentActive, setMode, setAttackType, clearAll, getStats }}>
+    <SimContext.Provider value={{ state, pushEvents, pushAction: () => {}, pushAgentMessage, pushLog, setRunning, setTarget, setAgentActive, setMode, setAttackType, resolveEvent, clearAll, getStats }}>
       {children}
     </SimContext.Provider>
   );

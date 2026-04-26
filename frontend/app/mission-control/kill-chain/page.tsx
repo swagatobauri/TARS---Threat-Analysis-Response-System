@@ -102,6 +102,20 @@ export default function KillChainPage() {
     }
   };
 
+  // Ensure all stages exist for the chart
+  const fullDistribution = {
+    RECONNAISSANCE: 0,
+    ENUMERATION: 0,
+    EXPLOITATION: 0,
+    PERSISTENCE: 0,
+    ...(stats.stage_distribution || {})
+  };
+
+  const chartData = Object.entries(fullDistribution).map(([stage, count]) => ({
+    stage,
+    count,
+  }));
+
   if (!apiAttackers && activeAttackers.length === 0) {
     return (
       <div className="flex items-center gap-3 text-[#888] font-mono animate-pulse p-10">
@@ -110,11 +124,6 @@ export default function KillChainPage() {
       </div>
     );
   }
-
-  const chartData = Array.isArray(Object.entries(stats?.stage_distribution || {})) ? Object.entries(stats.stage_distribution).map(([stage, count]) => ({
-    stage,
-    count,
-  })) : [];
 
   const exploitCount = stats.stage_distribution["EXPLOITATION"] || 0;
   const persistenceCount = stats.stage_distribution["PERSISTENCE"] || 0;
