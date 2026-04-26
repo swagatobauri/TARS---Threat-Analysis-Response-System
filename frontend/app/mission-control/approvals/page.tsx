@@ -88,6 +88,13 @@ export default function ApprovalsPage() {
   const handleReject = async (id: string) => {
     if (!rejectReason.trim()) return;
 
+    if (id.startsWith("sim-")) {
+      alert(`Simulation Rejection Processed: ${rejectReason}`);
+      setRejectingId(null);
+      setRejectReason("");
+      return;
+    }
+
     try {
       const res = await fetch(
         `${API_URL}/api/v1/safety/approvals/${id}/reject`,
