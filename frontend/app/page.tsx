@@ -183,6 +183,82 @@ export default function LandingPage() {
           ))}
           <div className="animate-pulse">_</div>
         </div>
+
+        {/* --- SYSTEM ARCHITECTURE & ENTERPRISE VALUE --- */}
+        <div 
+          className="mt-32 w-full max-w-5xl animate-in fade-in slide-in-from-bottom-16 duration-1000"
+          style={{ opacity: showContent ? 1 : 0 }}
+        >
+          <div className="border-b border-[#cc0000] pb-4 mb-12 flex items-center justify-between">
+            <h2 className="text-2xl md:text-3xl font-black tracking-tighter text-[#cc0000]">
+              SYSTEM_INTELLIGENCE_REPORT
+            </h2>
+            <span className="text-[#666] font-mono text-xs uppercase tracking-widest hidden md:block">
+              Classification: TOP SECRET // NOFORN
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 font-mono">
+            
+            {/* The Problem */}
+            <div className="border border-[#1a1a1a] bg-[#050505] p-8 relative group hover:border-[#333] transition-colors">
+              <div className="absolute top-0 left-0 w-8 h-1 bg-[#cc0000]" />
+              <h3 className="text-white text-lg font-bold tracking-widest mb-4">01. THE VULNERABILITY</h3>
+              <p className="text-[#888] text-sm leading-relaxed mb-4">
+                Enterprise servers are subjected to thousands of automated attacks daily. Traditional Web Application Firewalls (WAFs) rely on static, "dumb" rules (e.g., blocking an IP after 5 failed logins).
+              </p>
+              <p className="text-[#888] text-sm leading-relaxed">
+                Modern threat actors easily bypass these static defenses using rotating proxy networks and low-and-slow attack vectors. Human Security Operations Center (SOC) teams cannot monitor network traffic logs 24/7. When a 3:00 AM breach occurs, companies lose data before a human ever wakes up.
+              </p>
+            </div>
+
+            {/* The Solution */}
+            <div className="border border-[#1a1a1a] bg-[#050505] p-8 relative group hover:border-[#333] transition-colors">
+              <div className="absolute top-0 left-0 w-8 h-1 bg-[#00ff88]" />
+              <h3 className="text-white text-lg font-bold tracking-widest mb-4">02. THE TARS PROTOCOL</h3>
+              <p className="text-[#888] text-sm leading-relaxed mb-4">
+                TARS is an <strong className="text-white">Agentic AI</strong>. It doesn't use static rules. Instead, it utilizes Unsupervised Machine Learning (Isolation Forests and One-Class SVMs) to learn the exact mathematical baseline of "normal" traffic for a specific enterprise.
+              </p>
+              <p className="text-[#888] text-sm leading-relaxed">
+                When anomalous behavior is detected, the AI Reasoning Engine autonomously evaluates the context (IP reputation, historical patterns, time-of-day), executes an immediate defensive countermeasure (e.g., firewall block), and commands an LLM (LLaMA 3) to draft a human-readable incident report.
+              </p>
+            </div>
+
+            {/* The Workflow */}
+            <div className="border border-[#1a1a1a] bg-[#050505] p-8 relative group hover:border-[#333] transition-colors md:col-span-2">
+              <div className="absolute top-0 left-0 w-8 h-1 bg-[#fff]" />
+              <h3 className="text-white text-lg font-bold tracking-widest mb-6">03. AUTONOMOUS O.A.R.D.A.L. LOOP</h3>
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-xs">
+                <div className="border border-[#1a1a1a] p-4 text-center">
+                  <span className="block text-[#cc0000] font-bold mb-2">1. OBSERVE</span>
+                  <span className="text-[#555]">Ingests raw server network logs via secure API.</span>
+                </div>
+                <div className="border border-[#1a1a1a] p-4 text-center">
+                  <span className="block text-[#cc0000] font-bold mb-2">2. ANALYZE</span>
+                  <span className="text-[#555]">ML Ensemble calculates anomaly & threat scores.</span>
+                </div>
+                <div className="border border-[#1a1a1a] p-4 text-center">
+                  <span className="block text-[#cc0000] font-bold mb-2">3. REASON</span>
+                  <span className="text-[#555]">Cross-references IP history and contextual risk.</span>
+                </div>
+                <div className="border border-[#1a1a1a] p-4 text-center">
+                  <span className="block text-[#cc0000] font-bold mb-2">4. DECIDE</span>
+                  <span className="text-[#555]">Selects optimal defensive countermeasure.</span>
+                </div>
+                <div className="border border-[#1a1a1a] p-4 text-center">
+                  <span className="block text-[#cc0000] font-bold mb-2">5. ACT</span>
+                  <span className="text-[#555]">Executes RATE_LIMIT or BLOCK_IP autonomously.</span>
+                </div>
+                <div className="border border-[#1a1a1a] p-4 text-center">
+                  <span className="block text-[#cc0000] font-bold mb-2">6. LEARN</span>
+                  <span className="text-[#555]">Updates ML mathematical baselines for tomorrow.</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </main>
 
       {/* Bottom bar */}
