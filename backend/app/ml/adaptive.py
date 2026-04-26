@@ -18,6 +18,8 @@ import joblib
 import numpy as np
 import redis
 from celery import shared_task
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.database import get_db, SyncSessionLocal
 from app.db.models import (

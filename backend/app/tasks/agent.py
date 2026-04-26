@@ -13,7 +13,7 @@ from celery import shared_task
 
 from app.core.config import settings
 from app.db.database import SyncSessionLocal
-from sqlalchemy import select
+from sqlalchemy import select, desc
 from app.db.models import AnomalyScore, NetworkLog, ThreatEvent, IPReputation
 
 logger = logging.getLogger(__name__)
