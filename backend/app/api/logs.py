@@ -21,15 +21,23 @@ async def get_logs(skip: int = 0, limit: int = 50, db: AsyncSession = Depends(ge
 
 @router.post("/ingest")
 async def ingest_logs(logs: List[LogIngestRequest], db: AsyncSession = Depends(get_db)):
+    from app.safety.execution_gate import AllowlistChecker
+    checker = AllowlistChecker()
+    
     new_logs = []
+    skipped_trusted = 0
+    
     for log_data in logs:
+        if checker.is_trusted(log_data.source_ip):
+            skipped_trusted += 1
+            continue
+            
         new_log = NetworkLog(**log_data.model_dump())
         db.add(new_log)
         new_logs.append(new_log)
         
     await db.commit()
 
-    # Refresh to get generated UUIDs, then enqueue each for detection
     for log in new_logs:
         await db.refresh(log)
 
@@ -37,14 +45,36 @@ async def ingest_logs(logs: List[LogIngestRequest], db: AsyncSession = Depends(g
     for log in new_logs:
         detect_anomaly.delay(str(log.id))
     
-    return {"status": "success", "ingested": len(new_logs), "message": "Logs ingested and queued for detection"}
+    return {
+        "status": "success",
+        "enqueued": len(new_logs),
+        "skipped_trusted": skipped_trusted,
+        "rejected": 0,
+        "message": "Logs processed"
+    }
 
 @router.get("/live")
 async def live_logs():
     """SSE endpoint for real-time log streaming."""
+    import redis.asyncio as aioredis
+    from app.core.config import settings
+    
     async def log_generator():
-        while True:
-            await asyncio.sleep(2)
-            yield f"data: {json.dumps({'event': 'keep-alive', 'status': 'listening'})}\n\n"
+        client = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+        pubsub = client.pubsub()
+        await pubsub.subscribe("tars:events")
+        
+        try:
+            while True:
+                message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+                if message and message['type'] == 'message':
+                    data = message['data']
+                    yield f"data: {data}\n\n"
+                else:
+                    yield f"data: {json.dumps({'event': 'keep-alive', 'status': 'listening'})}\n\n"
+                await asyncio.sleep(0.5)
+        finally:
+            await pubsub.unsubscribe("tars:events")
+            await client.close()
             
     return StreamingResponse(log_generator(), media_type="text/event-stream")

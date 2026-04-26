@@ -43,12 +43,17 @@ class ThreatEventBase(BaseModel):
     resolved: bool
     created_at: datetime
     resolved_at: Optional[datetime] = None
+    kill_chain_stage: Optional[str] = None
+    fp_risk_score: Optional[float] = None
+    fp_risk_factors: Optional[List[str]] = []
 
     model_config = ConfigDict(from_attributes=True)
 
 class ThreatStats(BaseModel):
     risk_level_counts: dict
     action_taken_counts: dict
+    fp_rate_last_24h: Optional[float] = 0.0
+    avg_detection_latency_ms: Optional[float] = 0.0
 
 class LogIngestRequest(BaseModel):
     source_ip: str

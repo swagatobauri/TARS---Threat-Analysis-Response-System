@@ -47,7 +47,25 @@ async def get_threat_stats(db: AsyncSession = Depends(get_db)):
     risk_result = await db.execute(risk_query)
     risk_counts = {row[0]: row[1] for row in risk_result.all()}
     
-    return {"risk_level_counts": risk_counts, "action_taken_counts": action_counts}
+    from datetime import timedelta, timezone
+    from app.db.models import DetectionMetric, ActionLog
+    
+    yesterday = datetime.now(timezone.utc) - timedelta(days=1)
+    metric_query = select(DetectionMetric).where(DetectionMetric.measured_at >= yesterday).order_by(desc(DetectionMetric.measured_at)).limit(1)
+    metric_result = await db.execute(metric_query)
+    recent_metric = metric_result.scalars().first()
+    fp_rate = recent_metric.false_positive_rate if recent_metric else 0.0
+    
+    latency_query = select(func.avg(ActionLog.execution_time_ms))
+    latency_result = await db.execute(latency_query)
+    avg_latency = latency_result.scalar() or 0.0
+    
+    return {
+        "risk_level_counts": risk_counts, 
+        "action_taken_counts": action_counts,
+        "fp_rate_last_24h": fp_rate,
+        "avg_detection_latency_ms": avg_latency
+    }
 
 @router.get("/{id}", response_model=ThreatEventBase)
 async def get_threat(id: uuid.UUID, db: AsyncSession = Depends(get_db)):

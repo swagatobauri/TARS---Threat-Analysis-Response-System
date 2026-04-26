@@ -69,9 +69,48 @@ def emit_ip_blocked(ip: str, reason: str) -> None:
     })
 
 
-def emit_threshold_updated(risk_level: str, old: float, new: float) -> None:
+def emit_threshold_updated(new_high: float, new_low: float, reason: str) -> None:
     publish_event("threshold_updated", {
-        "risk_level": risk_level,
-        "old_threshold": old,
-        "new_threshold": new,
+        "new_high": new_high,
+        "new_low": new_low,
+        "reason": reason,
+    })
+
+def emit_approval_requested(queue_id: str, ip: str, proposed_action: str, confidence: float, expires_at: str) -> None:
+    publish_event("approval_requested", {
+        "queue_id": queue_id,
+        "ip": ip,
+        "proposed_action": proposed_action,
+        "confidence": confidence,
+        "expires_at": expires_at,
+    })
+
+def emit_rollback_executed(ip: str, action_log_id: str, rolled_back_by: str) -> None:
+    publish_event("rollback_executed", {
+        "ip": ip,
+        "action_log_id": action_log_id,
+        "rolled_back_by": rolled_back_by,
+    })
+
+def emit_kill_chain_progression(ip: str, old_stage: str, new_stage: str, predicted_next: str) -> None:
+    publish_event("kill_chain_progression", {
+        "ip": ip,
+        "old_stage": old_stage,
+        "new_stage": new_stage,
+        "predicted_next": predicted_next,
+    })
+
+def emit_shadow_decision(ip: str, would_have_acted: bool, action: str, score: float) -> None:
+    publish_event("shadow_decision", {
+        "ip": ip,
+        "would_have_acted": would_have_acted,
+        "action": action,
+        "score": score,
+    })
+
+def emit_validation_complete(action_log_id: str, success: bool, delta_score: float) -> None:
+    publish_event("validation_complete", {
+        "action_log_id": action_log_id,
+        "success": success,
+        "delta_score": delta_score,
     })
