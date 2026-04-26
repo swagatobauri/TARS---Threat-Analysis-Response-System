@@ -95,7 +95,7 @@ function HealthCard({ title, icon: Icon, status, statusColor, details }: any) {
       </div>
       
       <div className="space-y-3">
-        {details( || []).map((d: any, i: number) => (
+        {(details || []).map((d: any, i: number) => (
           <div key={i} className="flex justify-between">
             <span className="text-[10px] font-mono tracking-widest text-[#666] uppercase">{d.label}</span>
             <span className="text-xs font-mono text-[#ccc]">{d.value}</span>

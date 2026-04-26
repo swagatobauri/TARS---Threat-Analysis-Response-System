@@ -38,7 +38,7 @@ export default function ReplayPage() {
       </header>
 
       <div className="grid grid-cols-3 gap-6">
-        {MOCK_SCENARIOS( || []).map((sc) => (
+        {(MOCK_SCENARIOS || []).map((sc) => (
           <div key={sc.id} className="border border-[#1a1a1a] bg-[#050505] p-5 flex flex-col group hover:border-[#333] transition-colors">
             <div className="flex justify-between items-start mb-4">
               <span className="font-mono text-xs text-white">{sc.ip}</span>
