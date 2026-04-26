@@ -10,7 +10,8 @@ export default function ShadowBanner() {
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/safety/status");
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
+        const res = await fetch(`${API_URL}/api/v1/safety/status`);
         if (res.ok) {
           const data = await res.json();
           setIsShadowMode(data.shadow_mode);

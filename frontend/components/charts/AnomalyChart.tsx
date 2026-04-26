@@ -8,7 +8,8 @@ import { format } from "date-fns";
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function AnomalyChart() {
-  const { data } = useSWR('http://localhost:8000/api/v1/threats/stats', fetcher, {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
+  const { data } = useSWR(`${API_URL}/api/v1/threats/stats`, fetcher, {
     refreshInterval: 30000,
   });
 
