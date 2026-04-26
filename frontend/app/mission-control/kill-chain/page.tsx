@@ -99,7 +99,7 @@ export default function KillChainPage() {
 
   const activeAttackers = [...Object.values(simAttackersMap), ...(apiAttackers ?? [])];
   
-  const stats = apiStats ? { ...apiStats } : {
+  const stats = {
     total_active: activeAttackers.length,
     stage_distribution: {
       RECONNAISSANCE: activeAttackers.filter(a => a.current_stage === "RECONNAISSANCE").length,
@@ -109,16 +109,7 @@ export default function KillChainPage() {
     }
   };
 
-  // Ensure all stages exist for the chart
-  const fullDistribution = {
-    RECONNAISSANCE: 0,
-    ENUMERATION: 0,
-    EXPLOITATION: 0,
-    PERSISTENCE: 0,
-    ...(stats.stage_distribution || {})
-  };
-
-  const chartData = Object.entries(fullDistribution).map(([stage, count]) => ({
+  const chartData = Object.entries(stats.stage_distribution).map(([stage, count]) => ({
     stage,
     count,
   }));
