@@ -57,7 +57,6 @@ export default function Sidebar() {
     { name: "War Games", href: "/war-games", icon: Crosshair },
     { name: "Metrics & Proof", href: "/mission-control/metrics", icon: BarChart },
     { name: "Safety Controls", href: "/mission-control/safety", icon: ShieldCheck },
-    { name: "SDK Integration", href: "/mission-control/sdk", icon: TerminalSquare },
     { name: "System Health", href: "/mission-control/health", icon: HeartPulse },
   ];
 
@@ -105,6 +104,20 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      <div className="px-2 pb-2">
+        <Link 
+          href="/mission-control/sdk"
+          className={`flex items-center gap-3 px-3 py-2 rounded-md text-xs font-mono tracking-widest uppercase transition-colors ${
+            pathname === "/mission-control/sdk"
+              ? "bg-white text-black font-bold shadow-sm" 
+              : "text-[#888] hover:text-white hover:bg-[#111]"
+          }`}
+        >
+          <TerminalSquare size={14} className={pathname === "/mission-control/sdk" ? "text-black" : "text-[#555]"} />
+          SDK Integration
+        </Link>
+      </div>
 
       <div className="p-3 border-t border-[#1a1a1a]">
         <div className="flex items-center gap-2 text-[10px] font-mono text-[#666]">
