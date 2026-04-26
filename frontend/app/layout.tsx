@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/layout/Sidebar";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
@@ -19,12 +18,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body 
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-[#0a0a0a] text-[#f5f5f5] flex h-screen overflow-hidden`}
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-black text-[#f5f5f5]`}
       >
-        <Sidebar />
-        <main className="flex-1 h-screen overflow-y-auto pl-6 pr-8 py-6">
-          {children}
-        </main>
+        {children}
       </body>
     </html>
   );

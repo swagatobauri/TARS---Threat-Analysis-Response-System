@@ -1,168 +1,191 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Activity, ShieldAlert, Terminal, Globe, Server, AlertTriangle } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export default function DashboardPage() {
-  const [time, setTime] = useState("");
+export default function LandingPage() {
+  const [glitchText, setGlitchText] = useState("TARS");
+  const [terminalLines, setTerminalLines] = useState<string[]>([]);
+  const [showContent, setShowContent] = useState(false);
+
+  const bootSequence = [
+    "> initializing kernel...",
+    "> loading threat models [████████████] 100%",
+    "> connecting neural mesh...",
+    "> anomaly detection: ARMED",
+    "> reasoning engine: ONLINE",
+    "> groq llm bridge: CONNECTED",
+    "> memory store: 2.4TB indexed",
+    "> system status: LETHAL",
+    "",
+    "> TARS is watching.",
+  ];
 
   useEffect(() => {
-    // Start interval
-    const timer = setInterval(() => {
-      setTime(new Date().toISOString().split("T")[1].split(".")[0]);
-    }, 1000);
-    // Initial set
-    setTime(new Date().toISOString().split("T")[1].split(".")[0]);
-    return () => clearInterval(timer);
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < bootSequence.length) {
+        setTerminalLines((prev) => [...prev, bootSequence[i]]);
+        i++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => setShowContent(true), 300);
+      }
+    }, 150);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Glitch effect
+  useEffect(() => {
+    const chars = "TARS_OS#@!$%&";
+    const interval = setInterval(() => {
+      if (Math.random() > 0.92) {
+        const glitched = "TARS"
+          .split("")
+          .map((c) =>
+            Math.random() > 0.5
+              ? chars[Math.floor(Math.random() * chars.length)]
+              : c
+          )
+          .join("");
+        setGlitchText(glitched);
+        setTimeout(() => setGlitchText("TARS"), 100);
+      }
+    }, 200);
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="h-full flex flex-col gap-6 relative">
-      
-      {/* VoidZero style ambient background glow */}
-      <div className="absolute top-0 left-1/4 w-[800px] h-[400px] bg-white opacity-[0.02] blur-[120px] pointer-events-none z-[-1]" />
+    <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden selection:bg-red-600 selection:text-white">
+      {/* Scanline overlay */}
+      <div
+        className="pointer-events-none fixed inset-0 z-50"
+        style={{
+          background:
+            "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)",
+        }}
+      />
 
-      {/* Header - Shift5 style typography */}
-      <header className="flex justify-between items-end border-b border-[#1a1a1a] pb-4">
-        <div>
-          <h1 className="text-4xl font-light tracking-tight text-white mb-1">Operational Intelligence</h1>
-          <p className="text-[#888888] font-mono text-[10px] tracking-widest uppercase">TARS // Autonomous Defense Grid</p>
+      {/* Blood red accent line at top */}
+      <div className="w-full h-[2px] bg-[#cc0000] fixed top-0 z-40" />
+
+      {/* Nav */}
+      <nav className="flex justify-between items-center px-8 py-6 relative z-30">
+        <span className="font-mono text-sm tracking-[0.3em] text-[#cc0000]">
+          TARS_OS v3.1
+        </span>
+        <div className="flex gap-8 items-center">
+          <Link
+            href="/dashboard"
+            className="font-mono text-xs tracking-widest text-[#666] hover:text-[#cc0000] transition-colors uppercase"
+          >
+            Mission Control
+          </Link>
+          <Link
+            href="/war-games"
+            className="font-mono text-xs tracking-widest bg-[#cc0000] text-black px-4 py-2 hover:bg-[#ff0000] transition-colors uppercase font-bold"
+          >
+            War Games
+          </Link>
         </div>
-        <div className="text-right">
-          <div className="text-2xl font-mono text-white glow-text">{time} <span className="text-xs text-[#555]">UTC</span></div>
-          <div className="flex items-center gap-2 justify-end mt-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-safe animate-pulse shadow-[0_0_8px_#00ff88]"></span>
-            <span className="text-[10px] font-mono text-safe tracking-widest">SYSTEM ONLINE</span>
-          </div>
-        </div>
-      </header>
+      </nav>
 
-      {/* Main Grid */}
-      <div className="flex-1 grid grid-cols-12 gap-6 min-h-0">
-        
-        {/* Left Column: Metrics & Status (Shift5 Style) */}
-        <div className="col-span-3 flex flex-col gap-4 overflow-y-auto pr-1">
-          <MetricCard title="Active Threats" value="0" label="Monitoring..." color="text-safe" icon={ShieldAlert} />
-          <MetricCard title="Network Load" value="24.5k" label="req/sec" color="text-white" icon={Activity} />
-          
-          <div className="border border-[#1a1a1a] bg-[#050505] p-5 flex-1 mt-2">
-            <h3 className="text-[10px] font-mono text-[#888888] mb-6 uppercase tracking-widest flex items-center gap-2">
-              <Terminal size={12} /> System Status
-            </h3>
-            <ul className="space-y-3 font-mono text-[10px] tracking-widest text-[#888]">
-              <StatusRow num="01" label="INGESTION_ENGINE" status="NOMINAL" />
-              <StatusRow num="02" label="FEATURE_EXTRACTION" status="NOMINAL" />
-              <StatusRow num="03" label="ISOLATION_FOREST" status="ACTIVE" />
-              <StatusRow num="04" label="ONE_CLASS_SVM" status="ACTIVE" />
-              <StatusRow num="05" label="AGENT_REASONING" status="STANDBY" color="text-warn" />
-              <StatusRow num="06" label="GROQ_EXPLAINER" status="READY" />
-              <StatusRow num="07" label="REDIS_MEMORY" status="SYNCED" />
-            </ul>
-
-            <div className="mt-8 pt-6 border-t border-[#1a1a1a]">
-               <p className="font-mono text-[9px] text-[#444] leading-relaxed">
-                 01001001 00110101 00110101<br/>
-                 00000100 00110101 00011101<br/>
-                 10101110 00111001 10100101
-               </p>
-            </div>
-          </div>
+      {/* Hero */}
+      <main className="flex-1 flex flex-col items-center justify-center px-8 relative z-10">
+        {/* Giant Title */}
+        <div className="text-center mb-12">
+          <h1
+            className="font-mono font-black tracking-tighter leading-none"
+            style={{ fontSize: "clamp(80px, 15vw, 200px)", color: "#cc0000" }}
+          >
+            {glitchText}
+          </h1>
+          <div className="h-[1px] w-48 bg-[#cc0000] mx-auto my-6 opacity-60" />
+          <p
+            className="font-mono text-sm tracking-[0.5em] uppercase text-[#888]"
+            style={{
+              opacity: showContent ? 1 : 0,
+              transition: "opacity 0.8s",
+            }}
+          >
+            Threat Analysis & Response System
+          </p>
         </div>
 
-        {/* Center: The Visualization (Altis / Shift5 Wireframe Style) */}
-        <div className="col-span-6 border border-[#1a1a1a] bg-black relative overflow-hidden flex items-center justify-center">
-          
-          {/* Abstract Wireframe Sphere (Altis/Shift5 inspiration) */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-30">
-            <motion.div 
-              animate={{ rotate: 360 }}
-              transition={{ duration: 150, repeat: Infinity, ease: "linear" }}
-              className="w-[450px] h-[450px] relative"
+        {/* Brutalist tagline */}
+        <div
+          className="text-center max-w-3xl mb-16"
+          style={{
+            opacity: showContent ? 1 : 0,
+            transition: "opacity 1s 0.3s",
+          }}
+        >
+          <p className="font-mono text-2xl md:text-3xl font-light leading-relaxed text-white">
+            An autonomous AI agent that{" "}
+            <span className="text-[#cc0000] font-bold">watches</span>,{" "}
+            <span className="text-[#cc0000] font-bold">learns</span>, and{" "}
+            <span className="text-[#cc0000] font-bold">eliminates</span>{" "}
+            threats before you even know they exist.
+          </p>
+          <p className="font-mono text-xs text-[#555] mt-6 tracking-widest uppercase">
+            It doesn&apos;t sleep. It doesn&apos;t forget. It doesn&apos;t
+            forgive.
+          </p>
+        </div>
+
+        {/* CTA Buttons */}
+        <div
+          className="flex gap-4"
+          style={{
+            opacity: showContent ? 1 : 0,
+            transition: "opacity 1s 0.6s",
+          }}
+        >
+          <Link
+            href="/dashboard"
+            className="border-2 border-[#cc0000] text-[#cc0000] px-8 py-4 font-mono text-sm tracking-widest uppercase hover:bg-[#cc0000] hover:text-black transition-all"
+          >
+            Enter Mission Control
+          </Link>
+          <Link
+            href="/war-games"
+            className="bg-[#cc0000] text-black px-8 py-4 font-mono text-sm tracking-widest uppercase font-bold hover:bg-[#ff0000] transition-all"
+          >
+            Launch War Games
+          </Link>
+        </div>
+
+        {/* Boot terminal */}
+        <div
+          className="mt-16 w-full max-w-xl border border-[#1a1a1a] bg-[#050505] p-4 font-mono text-[11px] text-[#00ff88] leading-relaxed"
+          style={{
+            opacity: showContent ? 0.7 : 1,
+            transition: "opacity 1s",
+          }}
+        >
+          {terminalLines.map((line, i) => (
+            <div
+              key={i}
+              className={
+                line.includes("LETHAL") || line.includes("watching")
+                  ? "text-[#cc0000]"
+                  : ""
+              }
             >
-              {/* Concentric circles & ellipses */}
-              <div className="absolute inset-0 border border-[#333] rounded-full"></div>
-              <div className="absolute inset-0 border border-[#444] rounded-full transform scale-x-50"></div>
-              <div className="absolute inset-0 border border-[#444] rounded-full transform rotate-45 scale-x-50"></div>
-              <div className="absolute inset-0 border border-[#444] rounded-full transform -rotate-45 scale-x-50"></div>
-              <div className="absolute inset-0 border border-[#444] rounded-full transform rotate-90 scale-x-50"></div>
-              
-              {/* Latitude lines */}
-              <div className="absolute top-1/4 bottom-1/4 left-0 right-0 border border-[#333] rounded-[100%]"></div>
-              <div className="absolute top-[10%] bottom-[10%] left-0 right-0 border border-[#333] rounded-[100%]"></div>
-            </motion.div>
-          </div>
-          
-          <div className="relative z-10 text-center flex flex-col items-center">
-            <Globe size={32} className="mb-4 text-[#333]" strokeWidth={1} />
-            <h2 className="text-lg font-light tracking-[0.2em] text-[#666] uppercase">Global Traffic</h2>
-            <div className="mt-4 flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#333] animate-pulse"></div>
-              <p className="font-mono text-[10px] tracking-widest text-[#555] uppercase">Awaiting telemetry streams</p>
+              {line}
             </div>
-          </div>
-          
-          {/* Technical Corner Brackets */}
-          <div className="absolute top-4 left-4 w-6 h-6 border-t border-l border-[#333]"></div>
-          <div className="absolute top-4 right-4 w-6 h-6 border-t border-r border-[#333]"></div>
-          <div className="absolute bottom-4 left-4 w-6 h-6 border-b border-l border-[#333]"></div>
-          <div className="absolute bottom-4 right-4 w-6 h-6 border-b border-r border-[#333]"></div>
+          ))}
+          <div className="animate-pulse">_</div>
         </div>
+      </main>
 
-        {/* Right Column: Live Feed (VoidZero terminal style) */}
-        <div className="col-span-3 border border-[#1a1a1a] bg-[#050505] p-5 flex flex-col relative">
-          <h3 className="text-[10px] font-mono text-[#888888] mb-4 uppercase tracking-widest flex items-center justify-between pb-4 border-b border-[#1a1a1a]">
-            <span>Live Intelligence Feed</span>
-            <Activity size={12} className="text-[#555]" />
-          </h3>
-          
-          <div className="flex-1 flex flex-col justify-end space-y-3">
-             <div className="flex gap-3 text-[#444]">
-               <span className="font-mono text-[10px]">{time}</span>
-               <span className="font-mono text-[10px]">[SYS] Engine initialized.</span>
-             </div>
-             <div className="flex gap-3 text-[#444]">
-               <span className="font-mono text-[10px]">{time}</span>
-               <span className="font-mono text-[10px]">[MEM] Redis timeline synced.</span>
-             </div>
-             <div className="flex gap-3 mt-4">
-               <span className="font-mono text-[10px] text-white animate-pulse">_ listening</span>
-             </div>
-          </div>
-
-          {/* VoidZero style top glow */}
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-        </div>
-
-      </div>
+      {/* Bottom bar */}
+      <footer className="px-8 py-4 flex justify-between items-center font-mono text-[10px] text-[#444] tracking-widest relative z-30">
+        <span>AUTONOMOUS INTRUSION RESPONSE SYSTEM</span>
+        <span>
+          OBSERVE → ANALYZE → REASON → DECIDE → ACT → LEARN
+        </span>
+      </footer>
     </div>
-  );
-}
-
-function MetricCard({ title, value, label, color, icon: Icon }: any) {
-  return (
-    <div className="border border-[#1a1a1a] p-5 bg-[#050505] relative group overflow-hidden">
-      <div className="flex justify-between items-start mb-3">
-        <h3 className="text-[10px] font-mono text-[#888888] uppercase tracking-widest">{title}</h3>
-        <Icon size={14} className="text-[#444]" />
-      </div>
-      <div className="flex items-baseline gap-2">
-        <span className={`text-3xl font-light tracking-tight ${color}`}>{value}</span>
-        <span className="text-[10px] font-mono text-[#555] uppercase tracking-wider">{label}</span>
-      </div>
-    </div>
-  );
-}
-
-function StatusRow({ num, label, status, color = "text-white" }: any) {
-  return (
-    <li className="flex justify-between items-center group">
-      <div className="flex gap-4 items-center">
-        <span className="text-[#333]">{num}.</span>
-        <span className="text-[#888]">{label}</span>
-      </div>
-      <div className="flex-1 border-b border-dotted border-[#222] mx-4 relative top-[4px] group-hover:border-[#444] transition-colors"></div>
-      <span className={color}>{status}</span>
-    </li>
   );
 }
