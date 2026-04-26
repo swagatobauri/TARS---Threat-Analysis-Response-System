@@ -41,10 +41,18 @@ export default function MetricsPage() {
     const s = sim.getStats();
     const t = threatStats || { avg_detection_latency_ms: 12, fp_rate_last_24h: 0.005 };
     
-    // Merge simulation counts with API counts
+    // Scientific Calculation from Simulation Ground Truth
+    const simEvents = sim.state.events;
+    const tp = simEvents.filter(e => e.attack_type !== "normal" && e.risk_level !== "LOW").length;
+    const fp = simEvents.filter(e => e.attack_type === "normal" && e.risk_level !== "LOW").length;
+    const fn = simEvents.filter(e => e.attack_type !== "normal" && e.risk_level === "LOW").length;
+
+    const precision = tp > 0 ? tp / (tp + fp) : 0.985;
+    const recall = tp > 0 ? tp / (tp + fn) : 0.965;
+
     return {
-      precision: 0.98 + (Math.random() * 0.015),
-      recall: s.totalEvents > 0 ? (s.blocked + s.criticals + s.highs) / (s.criticals + s.highs + 0.001) : 0.96,
+      precision,
+      recall,
       fpRate: (t.fp_rate_last_24h || 0.005) * 100,
       latency: t.avg_detection_latency_ms || 12,
       totalEvents: s.totalEvents,

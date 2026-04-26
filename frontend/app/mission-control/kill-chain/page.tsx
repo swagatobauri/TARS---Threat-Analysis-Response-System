@@ -66,7 +66,14 @@ export default function KillChainPage() {
   sim.state.events
     .filter(e => e.attack_type !== "normal")
     .forEach(e => {
-      const stage = e.risk_level === "CRITICAL" ? "EXPLOITATION" : e.risk_level === "HIGH" ? "ENUMERATION" : "RECONNAISSANCE";
+      let stage = "RECONNAISSANCE";
+      if (e.risk_level === "CRITICAL") stage = "EXPLOITATION";
+      else if (e.risk_level === "HIGH") stage = "ENUMERATION";
+
+      // Advanced persistence logic
+      if (["ransomware", "zero_day"].includes(e.attack_type)) {
+        stage = "PERSISTENCE";
+      }
       if (!simAttackersMap[e.source_ip]) {
         simAttackersMap[e.source_ip] = {
           source_ip: e.source_ip,
