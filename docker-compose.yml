@@ -103,6 +103,28 @@ services:
     networks:
       - tars_network
 
+  tars_metrics_worker:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend.Dockerfile
+    container_name: tars_metrics_worker
+    restart: always
+    command: celery -A celery_worker.celery_app worker -Q metrics -c 1 --loglevel=info
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tars_network
+
   frontend:
     build:
       context: ./frontend
