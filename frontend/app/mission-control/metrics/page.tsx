@@ -7,27 +7,28 @@ import {
 } from "recharts";
 import { Target, Zap, Activity, Clock, TrendingDown } from "lucide-react";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function MetricsPage() {
   const { data: detectionMetrics } = useSWR(
-    "${API_URL}/api/v1/metrics/detection?days=1",
+    `${API_URL}/api/v1/metrics/detection?days=1`,
     fetcher,
     { refreshInterval: 60000 }
   );
 
   const { data: impactData } = useSWR(
-    "${API_URL}/api/v1/metrics/impact?days=7",
+    `${API_URL}/api/v1/metrics/impact?days=7`,
     fetcher
   );
 
   const { data: shadowReport } = useSWR(
-    "${API_URL}/api/v1/metrics/shadow",
+    `${API_URL}/api/v1/metrics/shadow`,
     fetcher
   );
 
   const { data: threatStats } = useSWR(
-    "${API_URL}/api/v1/threats/stats",
+    `${API_URL}/api/v1/threats/stats`,
     fetcher
   );
 

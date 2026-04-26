@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Crosshair, ShieldAlert, Activity, ChevronRight, X } from "lucide-react";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const STAGE_COLORS: Record<string, string> = {
@@ -28,13 +29,13 @@ function StageBadge({ stage, pulse = false }: { stage: string, pulse?: boolean }
 
 export default function KillChainPage() {
   const { data: activeAttackers, mutate } = useSWR(
-    "${API_URL}/api/v1/kill-chain/active",
+    `${API_URL}/api/v1/kill-chain/active`,
     fetcher,
     { refreshInterval: 5000 }
   );
 
   const { data: stats } = useSWR(
-    "${API_URL}/api/v1/kill-chain/stats",
+    `${API_URL}/api/v1/kill-chain/stats`,
     fetcher,
     { refreshInterval: 5000 }
   );

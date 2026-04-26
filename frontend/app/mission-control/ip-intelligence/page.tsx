@@ -6,7 +6,7 @@ import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recha
 import useSWR from "swr";
 import { format } from "date-fns";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "${API_URL}";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const fetcher = (url: string) => fetch(url).then((res) => {
   if (!res.ok) throw new Error("API Connection Failed");
