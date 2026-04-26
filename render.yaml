@@ -4,7 +4,8 @@ services:
     name: tars-backend-demo
     runtime: python
     plan: free
-    region: oregon # Common free region
+    region: oregon
+    rootDir: backend # Tell Render where the code is
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn -w 1 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT
     envVars:
@@ -25,8 +26,9 @@ services:
     runtime: node
     plan: free
     region: oregon
+    rootDir: frontend # Tell Render where the code is
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: "https://tars-backend-demo.onrender.com" # Placeholder
+        value: "https://tars-backend-demo.onrender.com"
