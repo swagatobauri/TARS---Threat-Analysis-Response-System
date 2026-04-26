@@ -18,7 +18,7 @@ export default function LiveThreatFeed() {
 
   useEffect(() => {
     // Connect to SSE endpoint
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace(/\/$/, "").replace("frontend", "backend") : "http://localhost:8000");
     const eventSource = new EventSource(`${API_URL}/api/v1/logs/live`);
     console.log("Connecting to Live Feed at:", `${API_URL}/api/v1/logs/live`);
 

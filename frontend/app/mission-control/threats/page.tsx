@@ -229,7 +229,7 @@ export default function ThreatsPage() {
                 </td>
               </tr>
             ) : (
-            (threats || []).map((t) => (
+            {Array.isArray(threats) && threats.map((t) => (
                 <React.Fragment key={t.id}>
                   <tr
                     className={`border-b border-[#1a1a1a] cursor-pointer hover:bg-[#111] transition-colors ${
@@ -308,7 +308,7 @@ export default function ThreatsPage() {
                             <div>
                               <h4 className="text-[10px] uppercase tracking-widest text-[#555] mb-1">FP Risk Factors</h4>
                               <div className="flex flex-wrap gap-2">
-                                {(t.fp_risk_factors || []).map((f: string, i: number) => (
+                                {Array.isArray(t.fp_risk_factors) && t.fp_risk_factors.map((f: string, i: number) => (
                                   <span key={i} className="text-[10px] font-mono px-2 py-0.5 border border-[#333] text-[#888] rounded">
                                     {f}
                                   </span>

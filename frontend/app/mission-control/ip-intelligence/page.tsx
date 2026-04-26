@@ -24,7 +24,7 @@ export default function IPIntelligencePage() {
   );
 
   const profile = useMemo(() => {
-    if (!decisions || decisions.length === 0) return null;
+    if (!Array.isArray(decisions) || decisions.length === 0) return null;
     const latest = decisions[0];
     return {
       ip_address: latest.source_ip || searchIp,
@@ -34,7 +34,7 @@ export default function IPIntelligencePage() {
       attack_events: decisions.filter((d: any) => d.action_taken === "BLOCK").length,
       false_positives: 0,
       attack_pattern: latest.threat_type || "anomaly_detected",
-      timeline: (decisions || []).map((d: any, i: number) => ({
+      timeline: Array.isArray(decisions) ? decisions.map((d: any, i: number) => ({
         date: d.created_at,
         events: 1
       }))
@@ -188,7 +188,7 @@ export default function IPIntelligencePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(decisions?.slice(0, 10) || []).map((d: any) => (
+                  {Array.isArray(decisions) && decisions.slice(0, 10).map((d: any) => (
                     <tr key={d.threat_event_id}>
                       <td className="py-3 border-b border-[#1a1a1a] text-[#888]">{format(new Date(d.created_at), "yyyy-MM-dd HH:mm")}</td>
                       <td className="py-3 border-b border-[#1a1a1a] text-[#888]">{d.confidence_score.toFixed(4)}</td>

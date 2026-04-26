@@ -341,7 +341,7 @@ export default function SimulationPage() {
               <Terminal size={10} /> Execution Console
             </h3>
             <div className="flex-1 overflow-y-auto font-mono text-[10px] text-[#00ff88] space-y-0.5 leading-relaxed">
-              {(consoleOutput || []).map((out, i) => (
+              {Array.isArray(consoleOutput) && consoleOutput.map((out, i) => (
                 <div
                   key={i}
                   className={
@@ -380,7 +380,7 @@ export default function SimulationPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {[...threats]
+                    {Array.isArray(threats) && [...threats]
                     .reverse()
                     .slice(0, 50)
                     .map((t) => (

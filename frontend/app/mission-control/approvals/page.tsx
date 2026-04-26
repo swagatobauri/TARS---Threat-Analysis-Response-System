@@ -74,7 +74,7 @@ export default function ApprovalsPage() {
         <div>
           <h1 className="text-2xl font-mono tracking-widest uppercase font-bold text-white mb-2 flex items-center gap-3">
             Approval Queue
-            {pendingApprovals.length > 0 && (
+            {Array.isArray(pendingApprovals) && pendingApprovals.length > 0 && (
               <span className="bg-[#cc0000] text-black text-xs px-2 py-1 rounded-full">
                 {pendingApprovals.length} PENDING
               </span>
@@ -84,7 +84,7 @@ export default function ApprovalsPage() {
         </div>
       </div>
 
-      {pendingApprovals.length === 0 ? (
+      {!Array.isArray(pendingApprovals) || pendingApprovals.length === 0 ? (
         <div className="border border-[#1a1a1a] bg-[#0c0c0c] rounded-lg p-12 flex flex-col items-center justify-center text-center">
           <ShieldAlert size={48} className="text-[#333] mb-4" />
           <h3 className="text-lg font-mono text-white mb-2">No pending approvals</h3>
@@ -92,7 +92,7 @@ export default function ApprovalsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {(pendingApprovals || []).map((approval: any) => {
+          {Array.isArray(pendingApprovals) && pendingApprovals.map((approval: any) => {
             const isExpired = new Date(approval.expires_at) < new Date();
             const timeRemaining = Math.max(0, Math.floor((new Date(approval.expires_at).getTime() - new Date().getTime()) / 1000));
             

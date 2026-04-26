@@ -47,7 +47,7 @@ export default function MetricsPage() {
   const fpReduction = ((staticBaseline - currentFpRate) / staticBaseline) * 100;
 
   // Format data for charts
-  const lineData = (detectionMetrics || []).map((m: any) => ({
+  const lineData = Array.isArray(detectionMetrics) ? detectionMetrics.map((m: any) => ({
     time: new Date(m.measured_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     Precision: parseFloat((m.precision * 100).toFixed(1)),
     Recall: parseFloat((m.recall * 100).toFixed(1)),

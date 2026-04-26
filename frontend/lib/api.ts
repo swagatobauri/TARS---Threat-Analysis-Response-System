@@ -4,7 +4,7 @@
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
   (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") 
-    ? window.location.origin.replace("frontend", "backend") + "/api/v1" 
+    ? window.location.origin.replace(/\/$/, "").replace("frontend", "backend") + "/api/v1" 
     : "/api/v1");
 
 // ── Types ──
