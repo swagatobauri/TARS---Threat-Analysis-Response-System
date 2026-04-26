@@ -276,7 +276,7 @@ export default function SimulationPage() {
                   { id: "brute_force", label: "Brute Force", icon: Zap },
                   { id: "ddos", label: "DDoS Flood", icon: Activity },
                   { id: "port_scan", label: "Port Scan", icon: ShieldAlert },
-                ]).map((a) => (
+                ].map((a) => (
                   <button
                     key={a.id}
                     onClick={() => setAttackType(a.id)}
