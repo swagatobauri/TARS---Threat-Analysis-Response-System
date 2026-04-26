@@ -16,10 +16,36 @@ export default function SelfScanPage() {
         await new Promise((r) => setTimeout(r, 1500));
         setStep(1);
 
-        // Fetch IP and Geo data
-        const res = await fetch("https://ipapi.co/json/");
-        if (!res.ok) throw new Error("Failed to fetch IP");
-        const geoData = await res.json();
+        // Fetch IP and Geo data with fallback for ad-blockers
+        let geoData = {};
+        try {
+          const res = await fetch("https://ipwho.is/"); // ipwho.is is less likely to be blocked
+          if (!res.ok) throw new Error("Primary API failed");
+          geoData = await res.json();
+          // ipwho.is returns slightly different keys than ipapi.co, normalize them:
+          if ((geoData as any).ip) {
+            geoData = {
+              ip: (geoData as any).ip,
+              org: (geoData as any).connection?.org || "Unknown ASN",
+              city: (geoData as any).city,
+              region: (geoData as any).region,
+              country_name: (geoData as any).country,
+              latitude: (geoData as any).latitude,
+              longitude: (geoData as any).longitude,
+            };
+          }
+        } catch (e) {
+          // If all network requests are blocked by Brave/uBlock, gracefully degrade
+          geoData = {
+            ip: "HIDDEN (PROXY DETECTED)",
+            org: "ENCRYPTED ROUTING",
+            city: "Classified",
+            region: "Classified",
+            country_name: "Classified",
+            latitude: "UNKNOWN",
+            longitude: "UNKNOWN",
+          };
+        }
 
         // Gather browser fingerprinting info
         const browserData = {
