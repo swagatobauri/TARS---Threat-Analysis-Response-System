@@ -1,0 +1,62 @@
+services:
+  # 1. PostgreSQL Database
+  - type: database
+    name: tars-db
+    databaseName: tars
+    user: tars_user
+
+  # 2. Redis Cache
+  - type: redis
+    name: tars-redis
+    ipAllowList: [] # Only allow internal connections
+
+  # 3. Backend API (FastAPI)
+  - type: web
+    name: tars-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tars-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: tars-redis
+          property: connectionString
+      - key: GROQ_API_KEY
+        sync: false # You will enter this in the UI
+      - key: SHADOW_MODE
+        value: "False"
+
+  # 4. Celery Worker
+  - type: worker
+    name: tars-worker
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A celery_worker.celery_app worker --loglevel=info
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tars-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: tars-redis
+          property: connectionString
+
+  # 5. Frontend (Next.js)
+  - type: web
+    name: tars-frontend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: tars-backend
+          property: host
