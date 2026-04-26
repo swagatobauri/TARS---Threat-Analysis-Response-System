@@ -18,11 +18,8 @@ import joblib
 import numpy as np
 import redis
 from celery import shared_task
-from sqlalchemy import select, func
-from sqlalchemy.orm import Session
-
-from app.core.config import settings
-from app.db.database import SyncSessionLocal
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.database import get_db, SyncSessionLocal
 from app.db.models import (
     AnomalyScore, ThreatEvent, ActionLog, FalsePositiveFeedback,
     DetectionMetric, ShadowDecision
@@ -229,12 +226,13 @@ class BaselineReport:
     recommendation: str
 
 class ShadowModeAnalyzer:
-    def analyze_shadow_period(self, session: Session, days: int = 7) -> BaselineReport:
+    async def analyze_shadow_period(self, session: AsyncSession, days: int = 7) -> BaselineReport:
         since = datetime.now(timezone.utc) - timedelta(days=days)
         
-        decisions = session.execute(
+        result = await session.execute(
             select(ShadowDecision).where(ShadowDecision.timestamp >= since)
-        ).scalars().all()
+        )
+        decisions = result.scalars().all()
         
         total = len(decisions)
         blocked = sum(1 for d in decisions if d.would_have_taken_action in ["BLOCK", "RATE_LIMIT"])

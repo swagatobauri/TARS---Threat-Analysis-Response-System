@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { ShieldCheck, ShieldAlert, AlertTriangle, CheckCircle, Trash2, Plus } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
 
 export default function SafetyControls() {
   const [status, setStatus] = useState<any>(null);
@@ -275,7 +275,7 @@ export default function SafetyControls() {
                   </td>
                 </tr>
               ) : (
-                allowlist.map((entry) => (
+                allowlist( || []).map((entry) => (
                   <tr key={entry.id} className="border-b border-[#222] hover:bg-[#111] transition-colors">
                     <td className="py-3 px-4 text-sm text-[#aaa] font-mono">{entry.entry_type}</td>
                     <td className="py-3 px-4 text-sm text-white font-mono">{entry.value}</td>

@@ -5,7 +5,7 @@ import useSWR from "swr";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Crosshair, ShieldAlert, Activity, ChevronRight, X } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const STAGE_COLORS: Record<string, string> = {
@@ -46,7 +46,7 @@ export default function KillChainPage() {
     return <div className="text-[#888] font-mono">Loading Kill Chain Intelligence...</div>;
   }
 
-  const chartData = Object.entries(stats.stage_distribution).map(([stage, count]) => ({
+  const chartData = Object.entries(stats.stage_distribution)( || []).map(([stage, count]) => ({
     stage,
     count,
   }));
@@ -104,7 +104,7 @@ export default function KillChainPage() {
                     contentStyle={{ backgroundColor: '#0a0a0a', borderColor: '#333', color: '#fff', fontSize: '12px', fontFamily: 'monospace' }}
                   />
                   <Bar dataKey="count" radius={[2, 2, 0, 0]}>
-                    {chartData.map((entry, index) => (
+                    {chartData( || []).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={STAGE_COLORS[entry.stage] || '#444'} />
                     ))}
                   </Bar>
@@ -134,7 +134,7 @@ export default function KillChainPage() {
                       </td>
                     </tr>
                   ) : (
-                    activeAttackers.map((attacker: any) => (
+                    activeAttackers( || []).map((attacker: any) => (
                       <tr 
                         key={attacker.source_ip} 
                         onClick={() => setSelectedAttacker(attacker)}
@@ -205,7 +205,7 @@ export default function KillChainPage() {
           <h4 className="text-xs font-mono text-[#888] uppercase tracking-widest mb-4">Stage History Timeline</h4>
           <div className="flex-1 overflow-y-auto pr-2 relative before:absolute before:inset-0 before:ml-2.5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-[#333] before:to-transparent">
             <div className="space-y-6 relative">
-              {selectedAttacker.stage_history.map((hist: any, i: number) => (
+              {selectedAttacker.stage_history( || []).map((hist: any, i: number) => (
                 <div key={i} className="relative flex items-start gap-4">
                   <div className="absolute left-2.5 -translate-x-1/2 w-3 h-3 rounded-full border-2 border-[#0c0c0c] bg-[#333] z-10" 
                        style={{ backgroundColor: STAGE_COLORS[hist.stage] }}></div>

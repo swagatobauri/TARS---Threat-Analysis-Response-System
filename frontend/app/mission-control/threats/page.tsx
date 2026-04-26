@@ -7,7 +7,7 @@ import Link from "next/link";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
 const API = API_URL;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -229,7 +229,7 @@ export default function ThreatsPage() {
                 </td>
               </tr>
             ) : (
-              threats.map((t) => (
+              threats( || []).map((t) => (
                 <React.Fragment key={t.id}>
                   <tr
                     className={`border-b border-[#1a1a1a] cursor-pointer hover:bg-[#111] transition-colors ${
@@ -308,7 +308,7 @@ export default function ThreatsPage() {
                             <div>
                               <h4 className="text-[10px] uppercase tracking-widest text-[#555] mb-1">FP Risk Factors</h4>
                               <div className="flex flex-wrap gap-2">
-                                {t.fp_risk_factors.map((f: string, i: number) => (
+                                {t.fp_risk_factors( || []).map((f: string, i: number) => (
                                   <span key={i} className="text-[10px] font-mono px-2 py-0.5 border border-[#333] text-[#888] rounded">
                                     {f}
                                   </span>

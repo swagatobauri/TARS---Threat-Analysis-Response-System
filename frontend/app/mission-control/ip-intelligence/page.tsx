@@ -6,7 +6,7 @@ import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recha
 import useSWR from "swr";
 import { format } from "date-fns";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
 
 const fetcher = (url: string) => fetch(url).then((res) => {
   if (!res.ok) throw new Error("API Connection Failed");
@@ -34,7 +34,7 @@ export default function IPIntelligencePage() {
       attack_events: decisions.filter((d: any) => d.action_taken === "BLOCK").length,
       false_positives: 0,
       attack_pattern: latest.threat_type || "anomaly_detected",
-      timeline: decisions.map((d: any, i: number) => ({
+      timeline: decisions( || []).map((d: any, i: number) => ({
         date: d.created_at,
         events: 1
       }))
@@ -188,7 +188,7 @@ export default function IPIntelligencePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {decisions?.slice(0, 10).map((d: any) => (
+                  {decisions?.slice(0, 10)( || []).map((d: any) => (
                     <tr key={d.threat_event_id}>
                       <td className="py-3 border-b border-[#1a1a1a] text-[#888]">{format(new Date(d.created_at), "yyyy-MM-dd HH:mm")}</td>
                       <td className="py-3 border-b border-[#1a1a1a] text-[#888]">{d.confidence_score.toFixed(4)}</td>

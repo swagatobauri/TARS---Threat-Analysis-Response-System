@@ -2,12 +2,10 @@ import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select, desc
-from sqlalchemy.orm import Session
-
-from app.db.database import get_sync_db
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.database import get_db
 from app.db.models import ThreatEvent
-from app.ml.adaptive import ShadowModeAnalyzer, BaselineReport
+from app.ml.adaptive import ShadowModeAnalyzer
 from app.safety.fp_mitigation import FalsePositiveMitigator
 
 router = APIRouter()
@@ -22,27 +20,25 @@ class DecisionResponse(BaseModel):
     created_at: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ReplayResponse(BaseModel):
     status: str
     message: str
     would_kill_chain_catch: bool
     simulated_action: str
-
 @router.get("/decisions", response_model=List[DecisionResponse])
-def get_decisions(limit: int = 20, db: Session = Depends(get_sync_db)):
-    threats = db.execute(
+async def get_decisions(limit: int = 20, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
         select(ThreatEvent).order_by(desc(ThreatEvent.created_at)).limit(limit)
-    ).scalars().all()
+    )
+    threats = result.scalars().all()
     
     mitigator = FalsePositiveMitigator()
     results = []
     
     for t in threats:
-        # Dynamically compute FP risk based on current history just for the API view
-        # or we could parse it from agent_reasoning. Let's do dynamic:
-        history_dicts = [{"action": t.action_taken, "score": t.confidence_score}] # Mocked history for speed
+        history_dicts = [{"action": t.action_taken, "score": t.confidence_score}] 
         fp_assessment = mitigator.evaluate_for_fp_risk(t.confidence_score, t.source_ip, history_dicts)
         
         results.append(DecisionResponse(
@@ -58,9 +54,9 @@ def get_decisions(limit: int = 20, db: Session = Depends(get_sync_db)):
     return results
 
 @router.get("/baseline-report")
-def get_baseline_report(db: Session = Depends(get_sync_db)):
+async def get_baseline_report(db: AsyncSession = Depends(get_db)):
     analyzer = ShadowModeAnalyzer()
-    report = analyzer.analyze_shadow_period(db, 7)
+    report = await analyzer.analyze_shadow_period(db, 7)
     return {
         "status": "success",
         "ready_to_enable": "Ready" in report.recommendation,
@@ -74,8 +70,8 @@ def get_baseline_report(db: Session = Depends(get_sync_db)):
     }
 
 @router.post("/replay/{id}", response_model=ReplayResponse)
-def replay_threat(id: str, db: Session = Depends(get_sync_db)):
-    threat = db.get(ThreatEvent, uuid.UUID(id))
+async def replay_threat(id: str, db: AsyncSession = Depends(get_db)):
+    threat = await db.get(ThreatEvent, uuid.UUID(id))
     if not threat:
         raise HTTPException(status_code=404, detail="ThreatEvent not found")
         

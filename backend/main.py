@@ -35,12 +35,23 @@ async def lifespan(app: FastAPI):
         from app.metrics.validator import MetricsComputer
 
         async def run_detection_loop():
+            from app.db.database import SyncSessionLocal
+            from app.db.models import NetworkLog, AnomalyScore
+            from app.tasks.detection import detect_anomaly
             while True:
                 try:
-                    await asyncio.to_thread(detect_anomaly)
+                    # Find a log that hasn't been scored yet
+                    with SyncSessionLocal() as session:
+                        unscored = session.execute(
+                            select(NetworkLog).where(~NetworkLog.id.in_(select(AnomalyScore.log_id))).limit(10)
+                        ).scalars().all()
+                        
+                        for log in unscored:
+                            logger.info(f"Autopilot: Scoring log {log.id}")
+                            detect_anomaly(str(log.id))
                 except Exception as e:
                     logger.error(f"Error in background detection: {e}")
-                await asyncio.sleep(5) # Scan every 5s in demo mode
+                await asyncio.sleep(5) 
 
         async def run_metrics_loop():
             computer = MetricsComputer()

@@ -43,7 +43,7 @@ async def ingest_logs(logs: List[LogIngestRequest], db: AsyncSession = Depends(g
 
     from app.tasks.detection import detect_anomaly
     for log in new_logs:
-        detect_anomaly.delay(str(log.id))
+        detect_anomaly(str(log.id))
     
     return {
         "status": "success",

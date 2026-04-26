@@ -55,6 +55,7 @@ class ThreatEvent(Base):
     action_taken: Mapped[str] = mapped_column(Enum("MONITOR", "ALERT", "RATE_LIMIT", "BLOCK", "PORT_CLOSE", name="action_type_enum"))
     agent_reasoning: Mapped[str] = mapped_column(Text)
     resolved: Mapped[bool] = mapped_column(Boolean, default=False)
+    fp_risk_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 

@@ -114,8 +114,8 @@ def _classify_risk(combined_score: float) -> str:
 # Celery Task
 # ---------------------------------------------------------------
 
-@shared_task(bind=True, name="tasks.detect_anomaly", max_retries=3, default_retry_delay=10)
-def detect_anomaly(self, log_id: str):
+@shared_task(name="tasks.detect_anomaly", max_retries=3, default_retry_delay=10)
+def detect_anomaly(log_id: str):
     """
     Main detection pipeline for a single NetworkLog entry.
 
@@ -185,8 +185,8 @@ def detect_anomaly(self, log_id: str):
 
         # 5. Chain to intelligence layer reasoning if threshold exceeded
         if combined_score > settings.ANOMALY_THRESHOLD:
-            from app.tasks.intelligence import run_agent_reasoning
-            run_agent_reasoning.delay(str(anomaly.id))
+            from app.tasks.agent import run_agent_reasoning
+            run_agent_reasoning(str(anomaly.id))
 
         # 6. VALIDATE: After executing an action, measure effectiveness —
         # did the attack stop? Did anomaly scores drop? Record outcome in ActionLog.
@@ -202,7 +202,7 @@ def detect_anomaly(self, log_id: str):
     except Exception as exc:
         session.rollback()
         logger.exception("Detection task failed for log_id=%s", log_id)
-        raise self.retry(exc=exc)
+        raise exc
 
     finally:
         session.close()

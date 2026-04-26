@@ -90,8 +90,8 @@ def _update_reputation(source_ip: str, action: str, session):
 # Celery Task
 # ---------------------------------------------------------------
 
-@shared_task(bind=True, name="tasks.execute_response", max_retries=3, default_retry_delay=10)
-def execute_response(self, threat_event_id: str):
+@shared_task(name="tasks.execute_response", max_retries=3, default_retry_delay=10)
+def execute_response(threat_event_id: str):
     """
     Execute the defensive response for a given ThreatEvent:
     1. Load the threat event
@@ -166,7 +166,7 @@ def execute_response(self, threat_event_id: str):
     except Exception as exc:
         session.rollback()
         logger.exception("Response execution failed for threat_event_id=%s", threat_event_id)
-        raise self.retry(exc=exc)
+        raise exc
 
     finally:
         session.close()

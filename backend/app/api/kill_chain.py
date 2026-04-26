@@ -3,9 +3,8 @@ from typing import List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select, func
-from sqlalchemy.orm import Session
-
-from app.db.database import get_sync_db
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.database import get_db
 from app.db.models import AttackerProfile
 
 router = APIRouter()
@@ -34,13 +33,15 @@ class KillChainStats(BaseModel):
     progression_rate: float
 
 @router.get("/active", response_model=List[AttackerProfileResponse])
-def get_active_attackers(db: Session = Depends(get_sync_db)):
-    items = db.execute(select(AttackerProfile).where(AttackerProfile.is_active == True)).scalars().all()
+async def get_active_attackers(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AttackerProfile).where(AttackerProfile.is_active == True))
+    items = result.scalars().all()
     return items
 
 @router.get("/stats", response_model=KillChainStats)
-def get_kill_chain_stats(db: Session = Depends(get_sync_db)):
-    active_profiles = db.execute(select(AttackerProfile).where(AttackerProfile.is_active == True)).scalars().all()
+async def get_kill_chain_stats(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(AttackerProfile).where(AttackerProfile.is_active == True))
+    active_profiles = result.scalars().all()
     
     dist = {"RECONNAISSANCE": 0, "ENUMERATION": 0, "EXPLOITATION": 0, "PERSISTENCE": 0}
     progressed = 0
@@ -61,8 +62,8 @@ def get_kill_chain_stats(db: Session = Depends(get_sync_db)):
     )
 
 @router.get("/{ip}", response_model=AttackerProfileResponse)
-def get_attacker_profile(ip: str, db: Session = Depends(get_sync_db)):
-    profile = db.get(AttackerProfile, ip)
+async def get_attacker_profile(ip: str, db: AsyncSession = Depends(get_db)):
+    profile = await db.get(AttackerProfile, ip)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     return profile

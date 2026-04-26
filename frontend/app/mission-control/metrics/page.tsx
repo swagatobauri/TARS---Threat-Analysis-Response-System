@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import { Target, Zap, Activity, Clock, TrendingDown } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function MetricsPage() {
@@ -47,13 +47,13 @@ export default function MetricsPage() {
   const fpReduction = ((staticBaseline - currentFpRate) / staticBaseline) * 100;
 
   // Format data for charts
-  const lineData = detectionMetrics.map((m: any) => ({
+  const lineData = detectionMetrics( || []).map((m: any) => ({
     time: new Date(m.measured_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     Precision: parseFloat((m.precision * 100).toFixed(1)),
     Recall: parseFloat((m.recall * 100).toFixed(1)),
   }));
 
-  const barData = (Array.isArray(impactData) ? impactData : []).map((i: any) => ({
+  const barData = (Array.isArray(impactData) ? impactData : [])( || []).map((i: any) => ({
     date: new Date(i.measured_at).toLocaleDateString([], { month: 'short', day: 'numeric' }),
     "Blocked Requests": i.requests_blocked,
     "Cost Saved ($)": parseFloat(i.cost_saved_usd.toFixed(2)),

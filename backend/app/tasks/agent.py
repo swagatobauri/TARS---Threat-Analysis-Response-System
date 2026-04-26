@@ -110,8 +110,8 @@ def _generate_explanation(context: dict) -> str:
 # Celery Task
 # ---------------------------------------------------------------
 
-@shared_task(bind=True, name="tasks.run_agent_reasoning", max_retries=3, default_retry_delay=15)
-def run_agent_reasoning(self, anomaly_score_id: str):
+@shared_task(name="tasks.run_agent_reasoning", max_retries=3, default_retry_delay=15)
+def run_agent_reasoning(anomaly_score_id: str):
     """
     Agent reasoning pipeline:
     1. Load anomaly score + parent log
@@ -258,7 +258,7 @@ def run_agent_reasoning(self, anomaly_score_id: str):
         # 6. Chain to response executor if action is not just monitoring
         if action != "MONITOR":
             from app.tasks.response import execute_response
-            execute_response.delay(str(threat_event.id))
+            execute_response(str(threat_event.id))
 
         return {
             "status": "decided",
@@ -270,7 +270,7 @@ def run_agent_reasoning(self, anomaly_score_id: str):
     except Exception as exc:
         session.rollback()
         logger.exception("Agent reasoning failed for anomaly_score_id=%s", anomaly_score_id)
-        raise self.retry(exc=exc)
+        raise exc
 
     finally:
         session.close()

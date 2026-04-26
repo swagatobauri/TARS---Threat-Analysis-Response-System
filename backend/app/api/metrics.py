@@ -4,9 +4,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy import select, func
-from sqlalchemy.orm import Session
-
-from app.db.database import get_sync_db
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.database import get_db
 from app.db.models import DetectionMetric, FalsePositiveFeedback
 
 # Assuming BusinessImpactRecord exists or we mock it if it doesn't.
@@ -40,29 +39,31 @@ class FPFeedbackSummary(BaseModel):
     total: int
 
 @router.get("/detection", response_model=List[DetectionMetricResponse])
-def get_detection_metrics(days: int = 7, db: Session = Depends(get_sync_db)):
+async def get_detection_metrics(days: int = 7, db: AsyncSession = Depends(get_db)):
     since = datetime.now(timezone.utc) - timedelta(days=days)
-    items = db.execute(
+    result = await db.execute(
         select(DetectionMetric).where(DetectionMetric.measured_at >= since).order_by(DetectionMetric.measured_at.asc())
-    ).scalars().all()
+    )
+    items = result.scalars().all()
     return items
 
 @router.get("/impact")
-def get_business_impact(days: int = Query(7, ge=1, le=90), db: Session = Depends(get_sync_db)):
+async def get_business_impact(days: int = Query(7, ge=1, le=90), db: AsyncSession = Depends(get_db)):
     try:
         from app.db.models import BusinessImpactRecord
         since = (datetime.now(timezone.utc) - timedelta(days=days)).date()
-        items = db.execute(
+        result = await db.execute(
             select(BusinessImpactRecord).where(BusinessImpactRecord.date >= since).order_by(BusinessImpactRecord.date.asc())
-        ).scalars().all()
+        )
+        items = result.scalars().all()
         return items
     except ImportError:
         return {"error": "BusinessImpactRecord model not defined"}
 
 @router.get("/shadow")
-def get_shadow_mode_analysis(days: int = 7, db: Session = Depends(get_sync_db)):
+async def get_shadow_mode_analysis(days: int = 7, db: AsyncSession = Depends(get_db)):
     analyzer = ShadowModeAnalyzer()
-    report = analyzer.analyze_shadow_period(db, days)
+    report = await analyzer.analyze_shadow_period(db, days)
     return {
         "total_shadow_decisions": report.total_shadow_decisions,
         "would_be_blocked": report.would_be_blocked,
@@ -72,8 +73,9 @@ def get_shadow_mode_analysis(days: int = 7, db: Session = Depends(get_sync_db)):
     }
 
 @router.get("/fp-feedback", response_model=FPFeedbackSummary)
-def get_fp_feedback_summary(db: Session = Depends(get_sync_db)):
-    items = db.execute(select(FalsePositiveFeedback)).scalars().all()
+async def get_fp_feedback_summary(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(FalsePositiveFeedback))
+    items = result.scalars().all()
     fp = sum(1 for i in items if i.was_false_positive)
     tp = sum(1 for i in items if not i.was_false_positive)
     

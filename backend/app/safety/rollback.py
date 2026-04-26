@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from celery import shared_task
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.db.database import SyncSessionLocal
@@ -24,10 +24,10 @@ class RollbackManager:
     def __init__(self):
         self.redis = get_redis_client()
 
-    def rollback_action(self, session: Session, action_log_id: str, rolled_back_by: str, reason: str) -> RollbackResult:
+    async def rollback_action(self, session: AsyncSession, action_log_id: str, rolled_back_by: str, reason: str) -> RollbackResult:
         try:
             action_id_uuid = uuid.UUID(action_log_id)
-            action_log = session.get(ActionLog, action_id_uuid)
+            action_log = await session.get(ActionLog, action_id_uuid)
             
             if not action_log:
                 return RollbackResult(success=False, record_id=None, error="ActionLog not found")
@@ -36,7 +36,7 @@ class RollbackManager:
             action_type = action_log.action_type
 
             if action_type == "BLOCK":
-                reputation = session.get(IPReputation, ip)
+                reputation = await session.get(IPReputation, ip)
                 if reputation:
                     reputation.is_blocked = False
             elif action_type == "RATE_LIMIT":
@@ -51,8 +51,8 @@ class RollbackManager:
                 was_successful=True
             )
             session.add(record)
-            session.commit()
-            session.refresh(record)
+            await session.commit()
+            await session.refresh(record)
 
             logger.info("Rolled back %s on %s by %s. Reason: %s", action_type, ip, rolled_back_by, reason)
             
@@ -68,7 +68,7 @@ class RollbackManager:
 
         except Exception as e:
             logger.exception("Rollback failed for %s", action_log_id)
-            session.rollback()
+            await session.rollback()
             return RollbackResult(success=False, record_id=None, error=str(e))
 
     def schedule_auto_rollback(self, action_log_id: str, minutes: int):

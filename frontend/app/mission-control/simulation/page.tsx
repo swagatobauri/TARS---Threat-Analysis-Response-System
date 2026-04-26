@@ -245,7 +245,7 @@ export default function SimulationPage() {
                 Mode
               </label>
               <div className="grid grid-cols-3 gap-1">
-                {["normal", "mixed", "attack_only"].map((m) => (
+                {["normal", "mixed", "attack_only"]( || []).map((m) => (
                   <button
                     key={m}
                     onClick={() => setMode(m)}
@@ -276,7 +276,7 @@ export default function SimulationPage() {
                   { id: "brute_force", label: "Brute Force", icon: Zap },
                   { id: "ddos", label: "DDoS Flood", icon: Activity },
                   { id: "port_scan", label: "Port Scan", icon: ShieldAlert },
-                ].map((a) => (
+                ]( || []).map((a) => (
                   <button
                     key={a.id}
                     onClick={() => setAttackType(a.id)}
@@ -341,7 +341,7 @@ export default function SimulationPage() {
               <Terminal size={10} /> Execution Console
             </h3>
             <div className="flex-1 overflow-y-auto font-mono text-[10px] text-[#00ff88] space-y-0.5 leading-relaxed">
-              {consoleOutput.map((out, i) => (
+              {consoleOutput( || []).map((out, i) => (
                 <div
                   key={i}
                   className={
@@ -383,7 +383,7 @@ export default function SimulationPage() {
                   {[...threats]
                     .reverse()
                     .slice(0, 50)
-                    .map((t) => (
+                    ( || []).map((t) => (
                       <tr
                         key={t.id}
                         className={`border-b border-[#111] ${

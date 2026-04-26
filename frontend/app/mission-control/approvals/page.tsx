@@ -4,7 +4,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import { Check, X, Clock, ShieldAlert } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
 const fetcher = (url: string) => fetch(url).then((res) => {
   if (!res.ok) throw new Error("API Connection Failed");
   return res.json();
@@ -92,7 +92,7 @@ export default function ApprovalsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {pendingApprovals.map((approval: any) => {
+          {pendingApprovals( || []).map((approval: any) => {
             const isExpired = new Date(approval.expires_at) < new Date();
             const timeRemaining = Math.max(0, Math.floor((new Date(approval.expires_at).getTime() - new Date().getTime()) / 1000));
             

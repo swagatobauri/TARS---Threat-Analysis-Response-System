@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 from celery import shared_task
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import SyncSessionLocal
 from app.db.models import HumanApprovalQueue, ThreatEvent
@@ -20,8 +20,8 @@ class ApprovalResult:
     action_executed: bool
 
 class HumanApprovalHandler:
-    def submit_for_approval(
-        self, session: Session, threat_event_id: str, proposed_action: str, confidence: float, reasoning: str
+    async def submit_for_approval(
+        self, session: AsyncSession, threat_event_id: str, proposed_action: str, confidence: float, reasoning: str
     ) -> HumanApprovalQueue:
         queue_entry = HumanApprovalQueue(
             threat_event_id=uuid.UUID(threat_event_id),
@@ -32,8 +32,8 @@ class HumanApprovalHandler:
             expires_at=datetime.now(timezone.utc) + timedelta(minutes=5)
         )
         session.add(queue_entry)
-        session.commit()
-        session.refresh(queue_entry)
+        await session.commit()
+        await session.refresh(queue_entry)
         
         # Emit SSE event to dashboard
         publish_event("approval_requested", {
@@ -46,9 +46,9 @@ class HumanApprovalHandler:
         logger.info("Submitted %s action for threat %s to human approval queue.", proposed_action, threat_event_id)
         return queue_entry
 
-    def process_approval(self, session: Session, queue_id: str, approved: bool, reviewer: str) -> ApprovalResult:
+    async def process_approval(self, session: AsyncSession, queue_id: str, approved: bool, reviewer: str) -> ApprovalResult:
         queue_uuid = uuid.UUID(queue_id)
-        entry = session.get(HumanApprovalQueue, queue_uuid)
+        entry = await session.get(HumanApprovalQueue, queue_uuid)
         
         if not entry:
             return ApprovalResult(success=False, status="NOT_FOUND", action_executed=False)
@@ -59,7 +59,7 @@ class HumanApprovalHandler:
         entry.reviewed_by = reviewer
         entry.reviewed_at = datetime.now(timezone.utc)
         
-        threat_event = session.get(ThreatEvent, entry.threat_event_id)
+        threat_event = await session.get(ThreatEvent, entry.threat_event_id)
         action_executed = False
 
         if approved:
@@ -75,11 +75,10 @@ class HumanApprovalHandler:
         else:
             entry.status = "REJECTED"
             if threat_event:
-                # Assuming human_reviewed column exists or using resolved
                 threat_event.resolved = True
             logger.info("Human %s rejected action %s.", reviewer, entry.proposed_action)
             
-        session.commit()
+        await session.commit()
         
         publish_event("approval_processed", {
             "queue_id": queue_id,
