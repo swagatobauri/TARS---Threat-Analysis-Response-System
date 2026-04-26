@@ -275,7 +275,7 @@ export default function SafetyControls() {
                   </td>
                 </tr>
               ) : (
-                {Array.isArray(allowlist) && allowlist.map((entry: any) => (
+                Array.isArray(allowlist) ? allowlist.map((entry: any) => (
                   <tr key={entry.id} className="border-b border-[#222] hover:bg-[#111] transition-colors">
                     <td className="py-3 px-4 text-sm text-[#aaa] font-mono">{entry.entry_type}</td>
                     <td className="py-3 px-4 text-sm text-white font-mono">{entry.value}</td>
@@ -287,7 +287,7 @@ export default function SafetyControls() {
                       </button>
                     </td>
                   </tr>
-                ))
+                )) : null
               )}
             </tbody>
           </table>

@@ -229,7 +229,7 @@ export default function ThreatsPage() {
                 </td>
               </tr>
             ) : (
-            Array.isArray(threats) && threats.map((t) => (
+            Array.isArray(threats) ? threats.map((t) => (
                 <React.Fragment key={t.id}>
                   <tr
                     className={`border-b border-[#1a1a1a] cursor-pointer hover:bg-[#111] transition-colors ${
@@ -322,7 +322,7 @@ export default function ThreatsPage() {
                   )}
                 </React.Fragment>
               ))
-            )
+            : []}
           </tbody>
         </table>
       </div>

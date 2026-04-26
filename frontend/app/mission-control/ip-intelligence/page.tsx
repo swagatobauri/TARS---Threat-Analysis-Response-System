@@ -37,7 +37,7 @@ export default function IPIntelligencePage() {
       timeline: Array.isArray(decisions) ? decisions.map((d: any, i: number) => ({
         date: d.created_at,
         events: 1
-      }))
+      })) : []
     };
   }, [decisions, searchIp]);
 

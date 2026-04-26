@@ -92,7 +92,7 @@ export default function ApprovalsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          Array.isArray(pendingApprovals) && pendingApprovals.map((approval: any) => {
+          Array.isArray(pendingApprovals) ? pendingApprovals.map((approval: any) => {
             const isExpired = new Date(approval.expires_at) < new Date();
             const timeRemaining = Math.max(0, Math.floor((new Date(approval.expires_at).getTime() - new Date().getTime()) / 1000));
             
@@ -182,7 +182,7 @@ export default function ApprovalsPage() {
                 )}
               </div>
             );
-          })
+          }) : null
         </div>
       )}
     </div>

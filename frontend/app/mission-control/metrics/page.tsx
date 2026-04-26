@@ -51,7 +51,7 @@ export default function MetricsPage() {
     time: new Date(m.measured_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     Precision: parseFloat((m.precision * 100).toFixed(1)),
     Recall: parseFloat((m.recall * 100).toFixed(1)),
-  }));
+  })) : [];
 
   const barData = (Array.isArray(impactData) ? impactData : []).map((i: any) => ({
     date: new Date(i.measured_at).toLocaleDateString([], { month: 'short', day: 'numeric' }),
