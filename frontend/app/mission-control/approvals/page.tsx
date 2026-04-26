@@ -4,39 +4,69 @@ import { useState } from "react";
 import useSWR from "swr";
 import { Check, X, Clock, ShieldAlert } from "lucide-react";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const fetcher = (url: string) => fetch(url).then((res) => {
+  if (!res.ok) throw new Error("API Connection Failed");
+  return res.json();
+});
 
 export default function ApprovalsPage() {
-  const { data: pendingApprovals, mutate } = useSWR(
-    "http://localhost:8000/api/v1/safety/approvals?status=PENDING",
+  const { data: pendingApprovals, mutate, error } = useSWR(
+    `${API_URL}/api/v1/safety/approvals?status=PENDING`,
     fetcher,
-    { refreshInterval: 5000 }
+    { 
+      refreshInterval: 5000,
+      revalidateOnFocus: true,
+      dedupingInterval: 2000
+    }
   );
   
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
   const handleApprove = async (id: string) => {
-    await fetch(`http://localhost:8000/api/v1/safety/approvals/${id}/approve`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reviewer: "SOC Analyst" })
-    });
-    mutate();
+    try {
+      const res = await fetch(`${API_URL}/api/v1/safety/approvals/${id}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewer: "SOC Analyst" })
+      });
+      if (res.ok) mutate();
+    } catch (e) {
+      console.error("Approval failed", e);
+    }
   };
 
   const handleReject = async (id: string) => {
-    await fetch(`http://localhost:8000/api/v1/safety/approvals/${id}/reject`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reviewer: "SOC Analyst", reason: rejectReason })
-    });
-    setRejectingId(null);
-    setRejectReason("");
-    mutate();
+    try {
+      const res = await fetch(`${API_URL}/api/v1/safety/approvals/${id}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewer: "SOC Analyst", reason: rejectReason })
+      });
+      if (res.ok) {
+        setRejectingId(null);
+        setRejectReason("");
+        mutate();
+      }
+    } catch (e) {
+      console.error("Rejection failed", e);
+    }
   };
 
-  if (!pendingApprovals) return <div className="text-[#888] font-mono">Loading approval queue...</div>;
+  if (error) return (
+    <div className="text-[#cc0000] font-mono border border-[#cc0000]/30 bg-[#1a0505] p-4 rounded-lg">
+      <ShieldAlert className="inline mr-2" size={18} />
+      Error: Could not connect to TARS Backend. Check your API URL.
+    </div>
+  );
+
+  if (!pendingApprovals) return (
+    <div className="flex items-center gap-3 text-[#888] font-mono animate-pulse">
+      <Clock size={18} />
+      Synchronizing Approval Queue...
+    </div>
+  );
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">

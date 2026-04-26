@@ -48,7 +48,7 @@ class AnomalyScore(Base):
 class ThreatEvent(Base):
     __tablename__ = "threat_events"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     source_ip: Mapped[str] = mapped_column(String(50), index=True)
     threat_type: Mapped[str] = mapped_column(String(100))
     confidence_score: Mapped[float] = mapped_column(Float)
@@ -123,12 +123,12 @@ class AllowlistEntry(Base):
 class HumanApprovalQueue(Base):
     __tablename__ = "human_approval_queue"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    threat_event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("threat_events.id"))
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    threat_event_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("threat_events.id"), index=True)
     proposed_action: Mapped[str] = mapped_column(String(50))
     confidence_score: Mapped[float] = mapped_column(Float)
     reasoning_summary: Mapped[str] = mapped_column(Text)
-    status: Mapped[str] = mapped_column(Enum("PENDING", "APPROVED", "REJECTED", "EXPIRED", name="approval_status_enum"), default="PENDING")
+    status: Mapped[str] = mapped_column(Enum("PENDING", "APPROVED", "REJECTED", "EXPIRED", name="approval_status_enum"), default="PENDING", index=True)
     reviewed_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

@@ -78,7 +78,8 @@ def get_safety_status(db: Session = Depends(get_sync_db)):
     shadow = redis.get("tars:config:shadow_mode")
     human = redis.get("tars:config:human_approval_mode")
     
-    allowlist_count = db.execute(select(AllowlistEntry).where(AllowlistEntry.is_active == True)).scalars().all()
+    from sqlalchemy import func
+    allowlist_count = db.execute(select(func.count()).select_from(AllowlistEntry).where(AllowlistEntry.is_active == True)).scalar()
     
     return SafetyStatus(
         shadow_mode=shadow.lower() == "true" if shadow else settings.SHADOW_MODE,
@@ -86,7 +87,7 @@ def get_safety_status(db: Session = Depends(get_sync_db)):
         high_confidence_threshold=settings.HIGH_CONFIDENCE_THRESHOLD,
         medium_confidence_threshold=settings.MEDIUM_CONFIDENCE_THRESHOLD,
         auto_rollback_minutes=settings.AUTO_ROLLBACK_MINUTES,
-        allowlist_count=len(allowlist_count)
+        allowlist_count=allowlist_count
     )
 
 @router.post("/mode")
@@ -106,11 +107,11 @@ def update_thresholds(update: ThresholdUpdate):
     return {"status": "success", "message": "Thresholds updated"}
 
 @router.get("/approvals", response_model=List[ApprovalQueueResponse])
-def list_approvals(status: Optional[str] = None, db: Session = Depends(get_sync_db)):
+def list_approvals(status: Optional[str] = "PENDING", limit: int = 50, db: Session = Depends(get_sync_db)):
     query = select(HumanApprovalQueue)
     if status:
         query = query.where(HumanApprovalQueue.status == status)
-    query = query.order_by(HumanApprovalQueue.expires_at.asc())
+    query = query.order_by(HumanApprovalQueue.expires_at.asc()).limit(limit)
     
     items = db.execute(query).scalars().all()
     return items

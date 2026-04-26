@@ -1,0 +1,13 @@
+/Users/swagatob/Documents/TARS - Threat Analysis & Response System/TARS/backend/venv/lib/python3.11/site-packages/pydantic/_internal/_config.py:386: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [55921]
+INFO:     Waiting for application startup.
+INFO:main:TARS API Starting up...
+INFO:main:Connecting to database at postgresql+asyncpg://localhost/TARS
+INFO:main:Loading ML models from ./app/ml/weights
+INFO:     Application startup complete.
+ERROR:    [Errno 48] error while attempting to bind on address ('0.0.0.0', 8000): address already in use
+INFO:     Waiting for application shutdown.
+INFO:main:TARS API Shutting down...
+INFO:     Application shutdown complete.
