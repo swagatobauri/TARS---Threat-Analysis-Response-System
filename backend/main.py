@@ -13,9 +13,12 @@ logger = logging.getLogger(__name__)
 # API Routers
 # ---------------------------------------------------------
 from app.api.threats import router as threats_router
-from app.api.agent import router as agent_router
+from app.api.intelligence import router as intelligence_router
 from app.api.logs import router as logs_router
 from app.api.health import router as health_router
+from app.api.safety import router as safety_router
+from app.api.kill_chain import router as kill_chain_router
+from app.api.metrics import router as metrics_router
 
 # ---------------------------------------------------------
 # Lifespan Context Manager
@@ -55,9 +58,12 @@ app.add_middleware(
 
 # Include routers
 app.include_router(threats_router, prefix="/api/v1/threats", tags=["Threats"])
-app.include_router(agent_router, prefix="/api/v1/agent", tags=["Intelligence"])
+app.include_router(intelligence_router, prefix="/api/v1/intelligence", tags=["Intelligence"])
 app.include_router(logs_router, prefix="/api/v1/logs", tags=["Logs"])
 app.include_router(health_router, prefix="/api/v1/health", tags=["Health"])
+app.include_router(safety_router, prefix="/api/v1/safety", tags=["Safety"])
+app.include_router(kill_chain_router, prefix="/api/v1/kill-chain", tags=["Kill Chain"])
+app.include_router(metrics_router, prefix="/api/v1/metrics", tags=["Metrics"])
 
 if __name__ == "__main__":
     import uvicorn

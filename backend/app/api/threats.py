@@ -67,3 +67,76 @@ async def resolve_threat(id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(threat)
     return threat
+
+from pydantic import BaseModel
+
+class FPMarkRequest(BaseModel):
+    reporter: str
+    notes: Optional[str] = ""
+
+class TPMarkRequest(BaseModel):
+    reporter: str
+
+@router.post("/{id}/mark-false-positive")
+async def mark_false_positive(id: uuid.UUID, payload: FPMarkRequest, db: AsyncSession = Depends(get_db)):
+    threat = await db.get(ThreatEvent, id)
+    if not threat:
+        raise HTTPException(status_code=404, detail="Threat not found")
+        
+    from app.db.models import FalsePositiveFeedback
+    
+    feedback = FalsePositiveFeedback(
+        threat_event_id=id,
+        reporter=payload.reporter,
+        was_false_positive=True,
+        notes=payload.notes
+    )
+    db.add(feedback)
+    
+    # Process the feedback right away if we wanted, but we have a ModelUpdater or threshold manager
+    # Typically this is batched or processed on insert. For now we just record it.
+    
+    threat.resolved = True
+    threat.resolved_at = datetime.utcnow()
+    threat.agent_reasoning = (threat.agent_reasoning or "") + f"\n\n[ANALYST FEEDBACK] FALSE_POSITIVE by {payload.reporter}"
+    
+    await db.commit()
+    
+    # Notify adaptive ML
+    from app.ml.adaptive import ModelUpdater, ThresholdManager
+    manager = ThresholdManager()
+    manager.update_thresholds_with_feedback([feedback])
+    updater = ModelUpdater()
+    updater.collect_feedback(str(id), was_true_positive=False)
+    
+    return {"status": "success", "message": "Marked as False Positive"}
+
+@router.post("/{id}/mark-true-positive")
+async def mark_true_positive(id: uuid.UUID, payload: TPMarkRequest, db: AsyncSession = Depends(get_db)):
+    threat = await db.get(ThreatEvent, id)
+    if not threat:
+        raise HTTPException(status_code=404, detail="Threat not found")
+        
+    from app.db.models import FalsePositiveFeedback
+    
+    feedback = FalsePositiveFeedback(
+        threat_event_id=id,
+        reporter=payload.reporter,
+        was_false_positive=False,
+        notes="Confirmed True Positive"
+    )
+    db.add(feedback)
+    
+    threat.resolved = True
+    threat.resolved_at = datetime.utcnow()
+    threat.agent_reasoning = (threat.agent_reasoning or "") + f"\n\n[ANALYST FEEDBACK] TRUE_POSITIVE by {payload.reporter}"
+    
+    await db.commit()
+    
+    from app.ml.adaptive import ModelUpdater, ThresholdManager
+    manager = ThresholdManager()
+    manager.update_thresholds_with_feedback([feedback])
+    updater = ModelUpdater()
+    updater.collect_feedback(str(id), was_true_positive=True)
+    
+    return {"status": "success", "message": "Marked as True Positive"}
