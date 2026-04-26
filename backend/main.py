@@ -23,7 +23,7 @@ from app.api.health import router as health_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup Event
-    logger.info("AIRS API Starting up...")
+    logger.info("TARS API Starting up...")
     logger.info(f"Connecting to database at {settings.DATABASE_URL}")
     logger.info(f"Loading ML models from {settings.MODEL_PATH}")
     # TODO: Implement actual Database initialization and ML model loading here
@@ -31,16 +31,16 @@ async def lifespan(app: FastAPI):
     yield # App runs here
     
     # Shutdown Event
-    logger.info("AIRS API Shutting down...")
+    logger.info("TARS API Shutting down...")
     # TODO: Implement teardown of DB connections, ML model cleanup, etc.
 
 # ---------------------------------------------------------
 # FastAPI App Initialization
 # ---------------------------------------------------------
 app = FastAPI(
-    title="AIRS API",
-    description="AI Agent-Based Autonomous Intrusion Response System API",
-    version="1.0.0",
+    title="TARS API",
+    description="Production-Grade Autonomous Cybersecurity Agent — autonomous security co-pilot that reduces alert fatigue, accelerates response time, and safely automates high-confidence defensive actions",
+    version="2.0.0",
     lifespan=lifespan
 )
 
@@ -55,7 +55,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(threats_router, prefix="/api/v1/threats", tags=["Threats"])
-app.include_router(agent_router, prefix="/api/v1/agent", tags=["Agent"])
+app.include_router(agent_router, prefix="/api/v1/agent", tags=["Intelligence"])
 app.include_router(logs_router, prefix="/api/v1/logs", tags=["Logs"])
 app.include_router(health_router, prefix="/api/v1/health", tags=["Health"])
 

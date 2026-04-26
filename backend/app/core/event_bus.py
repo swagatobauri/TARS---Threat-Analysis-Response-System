@@ -18,7 +18,7 @@ def get_redis_client() -> redis.Redis:
     return redis.Redis.from_url(settings.REDIS_URL, decode_responses=True)
 
 
-CHANNEL = "airs:events"
+CHANNEL = "tars:events"
 
 
 def publish_event(event_type: str, data: Dict[str, Any]) -> None:

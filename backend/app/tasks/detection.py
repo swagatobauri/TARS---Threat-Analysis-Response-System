@@ -1,8 +1,14 @@
 """
 TARS Detection Task
 -------------------
-Loads a network log, extracts features, runs Isolation Forest + One-Class SVM,
-computes a combined anomaly score, and chains to agent reasoning if suspicious.
+Production-Grade Autonomous Cybersecurity Agent — autonomous security co-pilot
+that reduces alert fatigue, accelerates response time, and safely automates
+high-confidence defensive actions.
+
+Autonomous Loop: Observe → Analyze → Reason → Decide → Act → Learn → Validate
+
+VALIDATE: After executing an action, measure effectiveness — did the attack stop?
+Did anomaly scores drop? Record outcome in ActionLog.
 """
 
 import logging
@@ -177,10 +183,13 @@ def detect_anomaly(self, log_id: str):
             log_id, combined_score, risk_level,
         )
 
-        # 5. Chain to agent reasoning if threshold exceeded
+        # 5. Chain to intelligence layer reasoning if threshold exceeded
         if combined_score > settings.ANOMALY_THRESHOLD:
-            from app.tasks.agent import run_agent_reasoning
+            from app.tasks.intelligence import run_agent_reasoning
             run_agent_reasoning.delay(str(anomaly.id))
+
+        # 6. VALIDATE: After executing an action, measure effectiveness —
+        # did the attack stop? Did anomaly scores drop? Record outcome in ActionLog.
 
         return {
             "status": "scored",

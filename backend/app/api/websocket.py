@@ -1,7 +1,7 @@
 """
 TARS SSE Bridge — Redis pub/sub → Server-Sent Events stream.
 
-Subscribes to the 'airs:events' Redis channel and streams all system events
+Subscribes to the 'tars:events' Redis channel and streams all system events
 to connected frontend clients in real-time.
 """
 

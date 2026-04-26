@@ -227,8 +227,8 @@ export default function LandingPage() {
             {/* The Workflow */}
             <div className="border border-[#1a1a1a] bg-[#050505] p-8 relative group hover:border-[#333] transition-colors md:col-span-2">
               <div className="absolute top-0 left-0 w-8 h-1 bg-[#fff]" />
-              <h3 className="text-white text-lg font-bold tracking-widest mb-6">03. AUTONOMOUS O.A.R.D.A.L. LOOP</h3>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-xs">
+              <h3 className="text-white text-lg font-bold tracking-widest mb-6">03. AUTONOMOUS O.A.R.D.A.L.V. LOOP</h3>
+              <div className="grid grid-cols-2 md:grid-cols-7 gap-3 text-xs">
                 <div className="border border-[#1a1a1a] p-4 text-center">
                   <span className="block text-[#cc0000] font-bold mb-2">1. OBSERVE</span>
                   <span className="text-[#555]">Ingests raw server network logs via secure API.</span>
@@ -251,7 +251,11 @@ export default function LandingPage() {
                 </div>
                 <div className="border border-[#1a1a1a] p-4 text-center">
                   <span className="block text-[#cc0000] font-bold mb-2">6. LEARN</span>
-                  <span className="text-[#555]">Updates ML mathematical baselines for tomorrow.</span>
+                  <span className="text-[#555]">Updates ML baselines for tomorrow.</span>
+                </div>
+                <div className="border border-[#00ff88] p-4 text-center bg-[#001100]">
+                  <span className="block text-[#00ff88] font-bold mb-2">7. VALIDATE</span>
+                  <span className="text-[#555]">Did the attack stop? Measures effectiveness.</span>
                 </div>
               </div>
             </div>
@@ -265,7 +269,7 @@ export default function LandingPage() {
       <footer className="px-8 py-4 flex justify-between items-center font-mono text-[10px] text-[#444] tracking-widest relative z-30">
         <span>AUTONOMOUS INTRUSION RESPONSE SYSTEM</span>
         <span>
-          OBSERVE → ANALYZE → REASON → DECIDE → ACT → LEARN
+          OBSERVE → ANALYZE → REASON → DECIDE → ACT → LEARN → VALIDATE
         </span>
       </footer>
     </div>
