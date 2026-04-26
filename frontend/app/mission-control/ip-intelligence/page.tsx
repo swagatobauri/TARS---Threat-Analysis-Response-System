@@ -48,7 +48,24 @@ export default function IPIntelligencePage() {
 
   // Pure CSS Circular Gauge Calculation
   const strokeDasharray = 283; // 2 * pi * 45
-  const strokeDashoffset = strokeDasharray - (strokeDasharray * profile.reputation_score);
+  const strokeDashoffset = profile 
+    ? strokeDasharray - (strokeDasharray * profile.reputation_score)
+    : strokeDasharray;
+
+  if (!profile && !error && !decisions) return (
+    <div className="flex items-center justify-center h-full text-[#888] font-mono animate-pulse">
+      <Globe className="mr-3 animate-spin-slow" />
+      SYNCHRONIZING WITH INTELLIGENCE CORE...
+    </div>
+  );
+
+  if (!profile) return (
+    <div className="flex flex-col items-center justify-center h-full border border-dashed border-[#333] rounded-lg bg-[#050505] p-12 text-center">
+      <ShieldAlert size={48} className="text-[#222] mb-4" />
+      <h3 className="text-white font-mono mb-2 uppercase tracking-widest">No Intelligence Data</h3>
+      <p className="text-[#666] font-mono text-xs max-w-md">The AI reasoning engine has not profiled any actors yet. Run a simulation in War Games to generate live threat intelligence.</p>
+    </div>
+  );
 
   return (
     <div className="h-full flex flex-col gap-6">
