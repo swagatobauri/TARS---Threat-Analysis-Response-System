@@ -76,7 +76,7 @@ export default function LandingPage() {
         </span>
         <div className="flex gap-8 items-center">
           <Link
-            href="/dashboard"
+            href="/mission-control"
             className="font-mono text-xs tracking-widest text-[#666] hover:text-[#cc0000] transition-colors uppercase"
           >
             Mission Control
@@ -148,7 +148,7 @@ export default function LandingPage() {
             Scan My Connection
           </Link>
           <Link
-            href="/dashboard"
+            href="/mission-control"
             className="border-2 border-[#cc0000] text-[#cc0000] px-8 py-4 font-mono text-sm tracking-widest uppercase hover:bg-[#cc0000] hover:text-black transition-all"
           >
             Mission Control

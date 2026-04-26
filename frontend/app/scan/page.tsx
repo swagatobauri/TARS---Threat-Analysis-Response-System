@@ -253,7 +253,7 @@ export default function SelfScanPage() {
                 </div>
               </div>
               <Link 
-                href="/dashboard" 
+                href="/mission-control" 
                 className="bg-[#00ff88] text-black px-6 py-3 font-bold tracking-widest uppercase hover:bg-white transition-colors whitespace-nowrap"
               >
                 ACCESS MISSION CONTROL

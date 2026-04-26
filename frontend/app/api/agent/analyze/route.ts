@@ -38,11 +38,11 @@ export async function POST(request: Request) {
     const summary = `INCOMING BATCH (${new Date().toISOString()}):
 - Total packets: ${events.length} (${normalCount} normal, ${attackEvents.length} anomalous)
 - Target: ${events[0]?.dest || "unknown"}
-- Attack types detected: ${[...new Set(attackEvents.map((e: any) => e.attack_type))].join(", ") || "none"}
-- Unique source IPs: ${[...new Set(attackEvents.map((e: any) => e.source_ip))].join(", ") || "none"}
+- Attack types detected: ${Array.from(new Set(attackEvents.map((e: any) => e.attack_type))).join(", ") || "none"}
+- Unique source IPs: ${Array.from(new Set(attackEvents.map((e: any) => e.source_ip))).join(", ") || "none"}
 - Highest anomaly score: ${Math.max(...events.map((e: any) => e.anomaly_score)).toFixed(3)}
 - Critical events: ${attackEvents.filter((e: any) => e.risk_level === "CRITICAL").length}
-- Actions taken: ${[...new Set(attackEvents.map((e: any) => e.action))].join(", ") || "none"}
+- Actions taken: ${Array.from(new Set(attackEvents.map((e: any) => e.action))).join(", ") || "none"}
 ${memory ? `\nPREVIOUS CONTEXT: ${memory}` : ""}
 
 Analyze this batch. What is happening? Is this a coordinated attack? What kill chain stage are we observing? Issue your verdict.`;

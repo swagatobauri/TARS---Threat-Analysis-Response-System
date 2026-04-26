@@ -211,7 +211,7 @@ export default function WarGamesPage() {
           <span className="font-mono text-sm tracking-[0.2em] font-bold text-[#cc0000]">WAR GAMES</span>
         </div>
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="font-mono text-[10px] tracking-widest text-[#555] hover:text-[#00ff88] transition-colors uppercase">
+          <Link href="/mission-control" className="font-mono text-[10px] tracking-widest text-[#555] hover:text-[#00ff88] transition-colors uppercase">
             → Open Mission Control
           </Link>
           <div className="flex items-center gap-2">

@@ -10,7 +10,6 @@ from sqlalchemy.orm import Session
 from app.db.database import SyncSessionLocal
 from app.db.models import HumanApprovalQueue, ThreatEvent
 from app.core.event_bus import publish_event
-from app.tasks.response import execute_response
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +69,7 @@ class HumanApprovalHandler:
             
             # Execute original action
             logger.info("Human %s approved action %s. Executing...", reviewer, entry.proposed_action)
+            from app.tasks.response import execute_response
             execute_response.delay(str(entry.threat_event_id))
             action_executed = True
         else:

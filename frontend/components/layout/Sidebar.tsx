@@ -81,12 +81,17 @@ export default function Sidebar() {
               className={`flex items-center justify-between px-3 py-2 text-xs font-mono tracking-widest uppercase transition-colors ${
                 isActive 
                   ? "bg-[#111] text-white border-l-2 border-[#cc0000]" 
-                  : "text-[#666] border-l-2 border-transparent hover:text-[#aaa]"
+                  : item.name === "War Games"
+                    ? "text-[#cc0000] border-l-2 border-transparent hover:text-[#ff0000]"
+                    : "text-[#666] border-l-2 border-transparent hover:text-[#aaa]"
               }`}
             >
               <div className="flex items-center gap-3">
-                <Icon size={14} className={isActive ? "text-[#cc0000]" : "text-[#555]"} />
+                <Icon size={14} className={isActive || item.name === "War Games" ? "text-[#cc0000]" : "text-[#555]"} />
                 {item.name}
+                {item.name === "War Games" && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#cc0000] animate-pulse ml-auto" />
+                )}
               </div>
               {item.badge !== null && item.badge !== undefined && (
                 <span className="bg-[#cc0000] text-black text-[10px] font-bold px-1.5 py-0.5 rounded-sm">

@@ -61,7 +61,7 @@ def get_kill_chain_stats(db: Session = Depends(get_sync_db)):
     )
 
 @router.get("/{ip}", response_model=AttackerProfileResponse)
-def get_attacker_profile(ip: str, db: Session = Depends(get_db)):
+def get_attacker_profile(ip: str, db: Session = Depends(get_sync_db)):
     profile = db.get(AttackerProfile, ip)
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")

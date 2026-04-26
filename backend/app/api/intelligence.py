@@ -58,7 +58,7 @@ def get_decisions(limit: int = 20, db: Session = Depends(get_sync_db)):
     return results
 
 @router.get("/baseline-report")
-def get_baseline_report(db: Session = Depends(get_db)):
+def get_baseline_report(db: Session = Depends(get_sync_db)):
     analyzer = ShadowModeAnalyzer()
     report = analyzer.analyze_shadow_period(db, 7)
     return {
@@ -74,7 +74,7 @@ def get_baseline_report(db: Session = Depends(get_db)):
     }
 
 @router.post("/replay/{id}", response_model=ReplayResponse)
-def replay_threat(id: str, db: Session = Depends(get_db)):
+def replay_threat(id: str, db: Session = Depends(get_sync_db)):
     threat = db.get(ThreatEvent, uuid.UUID(id))
     if not threat:
         raise HTTPException(status_code=404, detail="ThreatEvent not found")

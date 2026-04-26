@@ -162,7 +162,7 @@ def add_allowlist_entry(payload: AllowlistCreate, db: Session = Depends(get_sync
     return entry
 
 @router.delete("/allowlist/{id}")
-def remove_allowlist_entry(id: str, db: Session = Depends(get_db)):
+def remove_allowlist_entry(id: str, db: Session = Depends(get_sync_db)):
     try:
         entry = db.get(AllowlistEntry, uuid.UUID(id))
         if entry:

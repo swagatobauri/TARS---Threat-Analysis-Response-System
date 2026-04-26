@@ -29,13 +29,11 @@ async def lifespan(app: FastAPI):
     logger.info("TARS API Starting up...")
     logger.info(f"Connecting to database at {settings.DATABASE_URL}")
     logger.info(f"Loading ML models from {settings.MODEL_PATH}")
-    # TODO: Implement actual Database initialization and ML model loading here
     
     yield # App runs here
     
     # Shutdown Event
     logger.info("TARS API Shutting down...")
-    # TODO: Implement teardown of DB connections, ML model cleanup, etc.
 
 # ---------------------------------------------------------
 # FastAPI App Initialization

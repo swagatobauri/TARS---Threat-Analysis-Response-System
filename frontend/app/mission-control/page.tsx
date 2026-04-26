@@ -27,7 +27,7 @@ export default function DashboardPage() {
           <span className="font-mono text-xs text-[#cc0000] tracking-widest">
             LIVE SIMULATION — Target: {sim.state.target}
           </span>
-          <Link href="/war-games" className="ml-auto font-mono text-[10px] text-[#666] hover:text-[#cc0000] tracking-widest uppercase">
+          <Link href="/war-games" className="ml-auto font-mono text-[10px] text-[#cc0000] hover:text-[#ff0000] border border-[#cc0000] px-2 py-1 hover:bg-[#cc0000]/10 transition-all tracking-widest uppercase">
             → War Games Console
           </Link>
         </div>

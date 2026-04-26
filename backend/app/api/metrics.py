@@ -51,11 +51,10 @@ def get_detection_metrics(days: int = 7, db: Session = Depends(get_sync_db)):
 def get_business_impact(days: int = Query(7, ge=1, le=90), db: Session = Depends(get_sync_db)):
     try:
         from app.db.models import BusinessImpactRecord
-        since = datetime.now(timezone.utc) - timedelta(days=days)
+        since = (datetime.now(timezone.utc) - timedelta(days=days)).date()
         items = db.execute(
-            select(BusinessImpactRecord).where(BusinessImpactRecord.measured_at >= since).order_by(BusinessImpactRecord.measured_at.asc())
+            select(BusinessImpactRecord).where(BusinessImpactRecord.date >= since).order_by(BusinessImpactRecord.date.asc())
         ).scalars().all()
-        # Fallback dictionary return if schema varies
         return items
     except ImportError:
         return {"error": "BusinessImpactRecord model not defined"}
@@ -73,7 +72,7 @@ def get_shadow_mode_analysis(days: int = 7, db: Session = Depends(get_sync_db)):
     }
 
 @router.get("/fp-feedback", response_model=FPFeedbackSummary)
-def get_fp_feedback_summary(db: Session = Depends(get_db)):
+def get_fp_feedback_summary(db: Session = Depends(get_sync_db)):
     items = db.execute(select(FalsePositiveFeedback)).scalars().all()
     fp = sum(1 for i in items if i.was_false_positive)
     tp = sum(1 for i in items if not i.was_false_positive)
