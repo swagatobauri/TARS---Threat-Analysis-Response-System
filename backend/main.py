@@ -72,10 +72,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware allowing frontend origin
+# CORS middleware allowing all origins for demo compatibility
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"], # Allows Render frontend to connect to Render backend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

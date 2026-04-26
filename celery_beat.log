@@ -1,0 +1,12 @@
+[2026-04-26 06:30:03,387: INFO/MainProcess] beat: Starting...
+[2026-04-26 06:31:03,960: INFO/MainProcess] Scheduler: Sending due task expire-pending-approvals (tasks.expire_pending_approvals)
+celery beat v5.3.6 (emerald-rush) is starting.
+__    -    ... __   -        _
+LocalTime -> 2026-04-26 06:30:03
+Configuration ->
+    . broker -> redis://localhost:6379/0
+    . loader -> celery.loaders.app.AppLoader
+    . scheduler -> celery.beat.PersistentScheduler
+    . db -> celerybeat-schedule
+    . logfile -> [stderr]@%INFO
+    . maxinterval -> 5.00 minutes (300s)

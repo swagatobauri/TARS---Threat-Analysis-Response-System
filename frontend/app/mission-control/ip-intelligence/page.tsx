@@ -3,35 +3,47 @@
 import React, { useState, useMemo } from "react";
 import { Search, Globe, ShieldAlert, Activity } from "lucide-react";
 import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import useSWR from "swr";
 import { format } from "date-fns";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "${API_URL}";
+
+const fetcher = (url: string) => fetch(url).then((res) => {
+  if (!res.ok) throw new Error("API Connection Failed");
+  return res.json();
+});
 
 export default function IPIntelligencePage() {
   const [ip, setIp] = useState("");
   const [searchIp, setSearchIp] = useState("192.168.1.5");
-  const [isLoading, setIsLoading] = useState(false);
+  
+  const { data: decisions, error, isValidating } = useSWR(
+    `${API_URL}/api/v1/intelligence/decisions`,
+    fetcher,
+    { refreshInterval: 5000 }
+  );
 
-  // Mocking profile to simulate what the backend /api/v1/agent/decisions?ip=X returns
-  const profile = {
-    ip_address: searchIp,
-    reputation_score: 0.82,
-    risk_category: "CRITICAL",
-    total_events: 145,
-    attack_events: 32,
-    false_positives: 2,
-    attack_pattern: "brute_force_progression",
-    timeline: Array.from({length: 30}).map((_, i) => ({
-      date: new Date(Date.now() - (29-i) * 86400000).toISOString(),
-      events: Math.floor(Math.random() * 10)
-    }))
-  };
+  const profile = useMemo(() => {
+    if (!decisions || decisions.length === 0) return null;
+    const latest = decisions[0];
+    return {
+      ip_address: latest.source_ip || searchIp,
+      reputation_score: latest.confidence_score || 0.0,
+      risk_category: latest.confidence_score > 0.8 ? "CRITICAL" : "MEDIUM",
+      total_events: decisions.length,
+      attack_events: decisions.filter((d: any) => d.action_taken === "BLOCK").length,
+      false_positives: 0,
+      attack_pattern: latest.threat_type || "anomaly_detected",
+      timeline: decisions.map((d: any, i: number) => ({
+        date: d.created_at,
+        events: 1
+      }))
+    };
+  }, [decisions, searchIp]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setTimeout(() => {
-      setSearchIp(ip);
-      setIsLoading(false);
-    }, 500);
+    setSearchIp(ip);
   };
 
   // Pure CSS Circular Gauge Calculation
@@ -53,8 +65,8 @@ export default function IPIntelligencePage() {
             onChange={(e) => setIp(e.target.value)}
             className="border border-[#1a1a1a] bg-[#050505] px-3 py-1.5 text-xs font-mono text-white outline-none focus:border-[#444] transition-colors w-64"
           />
-          <button type="submit" disabled={isLoading} className="border border-[#1a1a1a] bg-[#111] hover:bg-[#222] px-4 py-1.5 flex items-center gap-2 text-[10px] font-mono text-white uppercase transition-colors">
-            {isLoading ? <Activity size={12} className="animate-spin" /> : <Search size={12} />} 
+          <button type="submit" disabled={isValidating} className="border border-[#1a1a1a] bg-[#111] hover:bg-[#222] px-4 py-1.5 flex items-center gap-2 text-[10px] font-mono text-white uppercase transition-colors">
+            {isValidating ? <Activity size={12} className="animate-spin" /> : <Search size={12} />} 
             Scan
           </button>
         </form>
@@ -159,16 +171,13 @@ export default function IPIntelligencePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td className="py-3 border-b border-[#1a1a1a] text-[#888]">{format(new Date(), "yyyy-MM-dd HH:mm")}</td>
-                    <td className="py-3 border-b border-[#1a1a1a] text-[#888]">0.8402</td>
-                    <td className="py-3 border-b border-[#1a1a1a] text-[#ff4444]">BLOCK</td>
-                  </tr>
-                  <tr>
-                    <td className="py-3 border-b border-[#1a1a1a] text-[#888]">{format(new Date(Date.now() - 3600000), "yyyy-MM-dd HH:mm")}</td>
-                    <td className="py-3 border-b border-[#1a1a1a] text-[#888]">0.6210</td>
-                    <td className="py-3 border-b border-[#1a1a1a] text-[#ffaa00]">RATE_LIMIT</td>
-                  </tr>
+                  {decisions?.slice(0, 10).map((d: any) => (
+                    <tr key={d.threat_event_id}>
+                      <td className="py-3 border-b border-[#1a1a1a] text-[#888]">{format(new Date(d.created_at), "yyyy-MM-dd HH:mm")}</td>
+                      <td className="py-3 border-b border-[#1a1a1a] text-[#888]">{d.confidence_score.toFixed(4)}</td>
+                      <td className={`py-3 border-b border-[#1a1a1a] ${d.action_taken === 'BLOCK' ? 'text-[#ff4444]' : 'text-[#ffaa00]'}`}>{d.action_taken}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

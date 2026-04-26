@@ -7,7 +7,8 @@ import Link from "next/link";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-const API = "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API = API_URL;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

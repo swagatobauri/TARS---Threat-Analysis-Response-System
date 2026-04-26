@@ -17,22 +17,22 @@ export default function SafetyControls() {
   }, []);
 
   const fetchStatus = async () => {
-    const res = await fetch("http://localhost:8000/api/v1/safety/status");
+    const res = await fetch("${API_URL}/api/v1/safety/status");
     if (res.ok) setStatus(await res.json());
   };
 
   const fetchAllowlist = async () => {
-    const res = await fetch("http://localhost:8000/api/v1/safety/allowlist");
+    const res = await fetch("${API_URL}/api/v1/safety/allowlist");
     if (res.ok) setAllowlist(await res.json());
   };
 
   const fetchBaseline = async () => {
-    const res = await fetch("http://localhost:8000/api/v1/intelligence/baseline-report");
+    const res = await fetch("${API_URL}/api/v1/intelligence/baseline-report");
     if (res.ok) setBaselineReport(await res.json());
   };
 
   const updateMode = async (key: string, value: boolean) => {
-    await fetch("http://localhost:8000/api/v1/safety/mode", {
+    await fetch("${API_URL}/api/v1/safety/mode", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ [key]: value }),
@@ -41,7 +41,7 @@ export default function SafetyControls() {
   };
 
   const updateThreshold = async (key: string, value: number) => {
-    await fetch("http://localhost:8000/api/v1/safety/thresholds", {
+    await fetch("${API_URL}/api/v1/safety/thresholds", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ [key]: value }),
@@ -51,7 +51,7 @@ export default function SafetyControls() {
 
   const addAllowlistEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch("http://localhost:8000/api/v1/safety/allowlist", {
+    await fetch("${API_URL}/api/v1/safety/allowlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -66,7 +66,7 @@ export default function SafetyControls() {
   };
 
   const deleteAllowlistEntry = async (id: string) => {
-    await fetch(`http://localhost:8000/api/v1/safety/allowlist/${id}`, { method: "DELETE" });
+    await fetch(`${API_URL}/api/v1/safety/allowlist/${id}`, { method: "DELETE" });
     fetchAllowlist();
   };
 

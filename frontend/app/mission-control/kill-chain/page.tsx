@@ -28,13 +28,13 @@ function StageBadge({ stage, pulse = false }: { stage: string, pulse?: boolean }
 
 export default function KillChainPage() {
   const { data: activeAttackers, mutate } = useSWR(
-    "http://localhost:8000/api/v1/kill-chain/active",
+    "${API_URL}/api/v1/kill-chain/active",
     fetcher,
     { refreshInterval: 5000 }
   );
 
   const { data: stats } = useSWR(
-    "http://localhost:8000/api/v1/kill-chain/stats",
+    "${API_URL}/api/v1/kill-chain/stats",
     fetcher,
     { refreshInterval: 5000 }
   );

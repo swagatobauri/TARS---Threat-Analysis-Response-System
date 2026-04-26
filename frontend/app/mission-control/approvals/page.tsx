@@ -4,7 +4,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import { Check, X, Clock, ShieldAlert } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "${API_URL}";
 const fetcher = (url: string) => fetch(url).then((res) => {
   if (!res.ok) throw new Error("API Connection Failed");
   return res.json();
