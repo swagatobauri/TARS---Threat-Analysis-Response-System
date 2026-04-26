@@ -12,31 +12,54 @@ const API_URL = BASE_URL.replace(/\/$/, "");
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function MetricsPage() {
-  const { data: detectionMetrics } = useSWR(
+  const { data: detectionMetrics, error: detError } = useSWR(
     `${API_URL}/api/v1/metrics/detection?days=1`,
     fetcher,
     { refreshInterval: 60000 }
   );
 
-  const { data: impactData } = useSWR(
+  const { data: impactData, error: impError } = useSWR(
     `${API_URL}/api/v1/metrics/impact?days=7`,
     fetcher
   );
 
-  const { data: shadowReport } = useSWR(
+  const { data: shadowReport, error: shaError } = useSWR(
     `${API_URL}/api/v1/metrics/shadow`,
     fetcher
   );
 
-  const { data: threatStats } = useSWR(
+  const { data: threatStats, error: thrError } = useSWR(
     `${API_URL}/api/v1/threats/stats`,
     fetcher
   );
 
   const [staticBaseline, setStaticBaseline] = useState<number>(12.5); // 12.5% FP rate
 
+  if (detError || impError || shaError || thrError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+        <div className="text-[#cc0000] font-mono border border-[#cc0000]/30 bg-[#1a0505] p-6 rounded-lg max-w-md text-center">
+          <ShieldAlert className="mx-auto mb-4" size={32} />
+          <h3 className="text-lg font-bold mb-2 uppercase tracking-widest">Telemetry Lost</h3>
+          <p className="text-sm opacity-80">
+            Performance metrics and ROI calculations are currently unavailable. 
+            Unable to stream data from the TARS core.
+          </p>
+          <div className="mt-4 pt-4 border-t border-[#cc0000]/20 text-[10px] uppercase opacity-60">
+            Telemetry Node: {API_URL}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!detectionMetrics || !threatStats || !shadowReport) {
-    return <div className="text-[#888] font-mono">Loading Metrics & Proof...</div>;
+    return (
+      <div className="flex items-center gap-3 text-[#888] font-mono animate-pulse p-10">
+        <Activity size={18} />
+        Aggregating Performance Telemetry...
+      </div>
+    );
   }
 
   // Get latest metric for top cards

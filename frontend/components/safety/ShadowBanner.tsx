@@ -6,6 +6,7 @@ import { AlertTriangle } from "lucide-react";
 
 export default function ShadowBanner() {
   const [isShadowMode, setIsShadowMode] = useState(false);
+  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -15,17 +16,34 @@ export default function ShadowBanner() {
         if (res.ok) {
           const data = await res.json();
           setIsShadowMode(data.shadow_mode);
+          setIsError(false);
+        } else {
+          setIsError(true);
         }
       } catch (err) {
         console.error("Failed to fetch safety status", err);
+        setIsError(true);
       }
     };
     checkStatus();
     
     // Periodically check if shadow mode is toggled elsewhere
-    const interval = setInterval(checkStatus, 5000);
+    const interval = setInterval(checkStatus, 10000); // Check less frequently to avoid noise
     return () => clearInterval(interval);
   }, []);
+
+  if (isError) {
+    return (
+      <div className="w-full bg-[#cc0000]/20 border-b border-[#cc0000]/50 text-[#ff4444] px-4 py-2 flex items-center justify-center z-50 relative">
+        <div className="flex items-center gap-3">
+          <AlertTriangle size={16} className="animate-pulse" />
+          <span className="font-mono text-[10px] font-bold tracking-widest uppercase">
+            CRITICAL: SECURE LINK TO TARS BACKEND SEVERED. MISSION CONTROL IS OFFLINE.
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   if (!isShadowMode) return null;
 

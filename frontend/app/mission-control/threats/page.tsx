@@ -135,11 +135,28 @@ export default function ThreatsPage() {
   const [searchIp, setSearchIp] = useState("");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
-  const { data: apiThreats, mutate } = useSWR(
+  const { data: apiThreats, mutate, error } = useSWR(
     `${API}/api/v1/threats?limit=150`,
     fetcher,
     { refreshInterval: 5000 }
   );
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+        <div className="text-[#cc0000] font-mono border border-[#cc0000]/30 bg-[#1a0505] p-6 rounded-lg max-w-md text-center">
+          <ShieldAlert className="mx-auto mb-4" size={32} />
+          <h3 className="text-lg font-bold mb-2 uppercase tracking-widest">Feed Interrupted</h3>
+          <p className="text-sm opacity-80">
+            Threat intelligence synchronization failed. The secure uplink to TARS Backend is offline.
+          </p>
+          <div className="mt-4 pt-4 border-t border-[#cc0000]/20 text-[10px] uppercase opacity-60">
+            Node: {API_URL}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   let threats: any[] = apiThreats ?? [];
 

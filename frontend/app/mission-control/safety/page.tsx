@@ -11,17 +11,29 @@ export default function SafetyControls() {
   const [allowlist, setAllowlist] = useState<any[]>([]);
   const [baselineReport, setBaselineReport] = useState<any>(null);
   
+  const [error, setError] = useState<string | null>(null);
   const [newEntry, setNewEntry] = useState({ type: "IP", value: "", label: "" });
 
   useEffect(() => {
-    fetchStatus();
-    fetchAllowlist();
-    fetchBaseline();
+    const init = async () => {
+      try {
+        await Promise.all([fetchStatus(), fetchAllowlist(), fetchBaseline()]);
+      } catch (err) {
+        console.error("Safety init failed", err);
+        setError("Unable to connect to safety controller.");
+      }
+    };
+    init();
   }, []);
 
   const fetchStatus = async () => {
     const res = await fetch(`${API_URL}/api/v1/safety/status`);
-    if (res.ok) setStatus(await res.json());
+    if (res.ok) {
+      setStatus(await res.json());
+      setError(null);
+    } else {
+      throw new Error("Failed to fetch status");
+    }
   };
 
   const fetchAllowlist = async () => {
@@ -73,7 +85,32 @@ export default function SafetyControls() {
     fetchAllowlist();
   };
 
-  if (!status) return <div className="text-white">Loading Safety Controls...</div>;
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+        <div className="text-[#cc0000] font-mono border border-[#cc0000]/30 bg-[#1a0505] p-6 rounded-lg max-w-md text-center">
+          <ShieldAlert className="mx-auto mb-4" size={32} />
+          <h3 className="text-lg font-bold mb-2 uppercase tracking-widest">Control Link Severed</h3>
+          <p className="text-sm opacity-80">
+            Safety overrides and allowlist management are currently unavailable. 
+            Backend connection failed.
+          </p>
+          <div className="mt-4 pt-4 border-t border-[#cc0000]/20 text-[10px] uppercase opacity-60">
+            Gateway: {API_URL}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!status) {
+    return (
+      <div className="flex items-center gap-3 text-[#888] font-mono animate-pulse p-10">
+        <ShieldCheck size={18} />
+        Loading Safety Controls...
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">

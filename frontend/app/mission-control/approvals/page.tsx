@@ -8,9 +8,14 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefine
 const API_URL = BASE_URL.replace(/\/$/, "");
 
 const fetcher = async (url: string) => {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("API Connection Failed");
-  return res.json();
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("API Connection Failed");
+    return res.json();
+  } catch (err) {
+    console.error("Fetcher error:", err);
+    throw err;
+  }
 };
 
 type Approval = {
@@ -90,9 +95,18 @@ export default function ApprovalsPage() {
 
   if (error)
     return (
-      <div className="text-[#cc0000] font-mono border border-[#cc0000]/30 bg-[#1a0505] p-4 rounded-lg">
-        <ShieldAlert className="inline mr-2" size={18} />
-        Error: Could not connect to TARS Backend. Check your API URL.
+      <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+        <div className="text-[#cc0000] font-mono border border-[#cc0000]/30 bg-[#1a0505] p-6 rounded-lg max-w-md text-center">
+          <ShieldAlert className="mx-auto mb-4" size={32} />
+          <h3 className="text-lg font-bold mb-2 uppercase tracking-widest">Connectivity Loss</h3>
+          <p className="text-sm opacity-80">
+            TARS Mission Control is unable to establish a secure link with the Backend API. 
+            Please verify the API service is operational.
+          </p>
+          <div className="mt-4 pt-4 border-t border-[#cc0000]/20 text-[10px] uppercase opacity-60">
+            Endpoint: {API_URL}
+          </div>
+        </div>
       </div>
     );
 

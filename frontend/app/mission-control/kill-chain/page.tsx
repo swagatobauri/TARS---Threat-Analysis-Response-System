@@ -29,13 +29,13 @@ function StageBadge({ stage, pulse = false }: { stage: string, pulse?: boolean }
 }
 
 export default function KillChainPage() {
-  const { data: activeAttackers, mutate } = useSWR(
+  const { data: activeAttackers, mutate, error: attackersError } = useSWR(
     `${API_URL}/api/v1/kill-chain/active`,
     fetcher,
     { refreshInterval: 5000 }
   );
 
-  const { data: stats } = useSWR(
+  const { data: stats, error: statsError } = useSWR(
     `${API_URL}/api/v1/kill-chain/stats`,
     fetcher,
     { refreshInterval: 5000 }
@@ -43,8 +43,30 @@ export default function KillChainPage() {
 
   const [selectedAttacker, setSelectedAttacker] = useState<any>(null);
 
+  if (attackersError || statsError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
+        <div className="text-[#cc0000] font-mono border border-[#cc0000]/30 bg-[#1a0505] p-6 rounded-lg max-w-md text-center">
+          <ShieldAlert className="mx-auto mb-4" size={32} />
+          <h3 className="text-lg font-bold mb-2 uppercase tracking-widest">Intelligence Gap</h3>
+          <p className="text-sm opacity-80">
+            Kill chain tracking is offline. Unable to reach the intelligence processing unit.
+          </p>
+          <div className="mt-4 pt-4 border-t border-[#cc0000]/20 text-[10px] uppercase opacity-60">
+            Source: {API_URL}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!activeAttackers || !stats) {
-    return <div className="text-[#888] font-mono">Loading Kill Chain Intelligence...</div>;
+    return (
+      <div className="flex items-center gap-3 text-[#888] font-mono animate-pulse p-10">
+        <Activity size={18} />
+        Synchronizing Kill Chain Intelligence...
+      </div>
+    );
   }
 
   const chartData = Array.isArray(Object.entries(stats?.stage_distribution || {})) ? Object.entries(stats.stage_distribution).map(([stage, count]) => ({
