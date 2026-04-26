@@ -30,7 +30,8 @@ class ThreatExplainer:
         anomaly_score: float,
         ip_profile: IPProfile,
         attack_pattern: Optional[str] = None,
-        threat_event_id: Optional[str] = None
+        threat_event_id: Optional[str] = None,
+        **kwargs
     ) -> str:
         """
         Builds a structured prompt and calls Groq for a clear explanation.
@@ -45,15 +46,18 @@ class ThreatExplainer:
         system_prompt = (
             "You are a cybersecurity analyst AI. Given structured detection data, "
             "write a clear, concise 2-3 sentence explanation of the threat and action taken. "
-            "Be specific, professional, and avoid jargon."
+            "If kill chain stage data is provided, describe where in the attack lifecycle "
+            "the attacker is and what the predicted next step is. Be specific about stages. "
+            "Be professional and avoid jargon."
         )
 
         user_content = (
             f"Source IP: {ip_profile.ip_address if ip_profile else 'Unknown'}\n"
             f"Anomaly Score: {anomaly_score:.4f}\n"
             f"Attack Pattern: {attack_pattern or 'None detected'}\n"
+            f"Kill Chain Stage: {kwargs.get('kill_chain_stage', 'Unknown')}\n"
             f"Action Taken: {action_taken}\n"
-            f"History: {ip_profile.attack_events if ip_profile else 0} prior attack events\n"
+            f"History: {len(ip_profile.attack_events) if ip_profile and getattr(ip_profile, 'attack_events', None) else 0} prior attack events\n"
             f"Reasoning Chain:\n" + "\n".join([f"- {r}" for r in reasoning_chain])
         )
 

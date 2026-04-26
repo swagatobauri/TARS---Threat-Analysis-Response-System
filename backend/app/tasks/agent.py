@@ -153,65 +153,86 @@ def run_agent_reasoning(self, anomaly_score_id: str):
 
         repeated_offender = ip_rep.threat_count >= 3
 
-        # 3. Decide action via Intelligence Reasoning Engine & Kill Chain Integration
-        from app.intelligence.reasoning import ReasoningEngine, AgentContext
+        # 3. Decision Prep & Kill Chain Integration
         from app.kill_chain.integration import enrich_with_kill_chain
+        from app.safety.fp_mitigation import FalsePositiveMitigator
+        from app.scoring.decision_engine import ScoringEngine
+        from app.core.config import settings
         
         threat_event_id = str(uuid.uuid4())
         
         kc_stage, is_progressing = enrich_with_kill_chain(session, source_ip, log, threat_event_id)
         
-        # Fetch recent decisions for context
+        # Threat typing
+        threat_type = _classify_threat_type({
+            "request_rate": log.request_rate or 0,
+            "port_entropy": 0,
+            "session_deviation": anomaly.behavioral_deviation,
+            "repeated_offender": repeated_offender,
+        })
+        
+        # Fetch recent decisions for context/FP Mitigation
         recent_threats = session.execute(
             select(ThreatEvent).where(ThreatEvent.source_ip == source_ip).order_by(ThreatEvent.created_at.desc()).limit(10)
         ).scalars().all()
         
-        ctx = AgentContext(
-            anomaly_score=anomaly.combined_score,
-            risk_level=anomaly.risk_level,
-            source_ip=source_ip,
-            ip_history=ip_rep,
-            recent_decisions=recent_threats,
-            time_of_day=datetime.utcnow().hour,
-            attack_type_guess=None,
-            confidence=1.0,
+        # 4. False Positive Mitigation
+        mitigator = FalsePositiveMitigator()
+        history_dicts = [{"action": t.action_taken, "score": t.confidence_score} for t in recent_threats]
+        fp_assessment = mitigator.evaluate_for_fp_risk(anomaly.combined_score, source_ip, history_dicts)
+        
+        # 5. Decide action via Deterministic Scoring Engine
+        scoring_engine = ScoringEngine()
+        decision = scoring_engine.decide(
+            anomaly_score=anomaly,
+            ip_profile=ip_rep,
             kill_chain_stage=kc_stage,
-            is_progressing=is_progressing
+            fp_assessment=fp_assessment,
+            settings=settings
+        )
+        action = decision.action
+
+        # Build reasoning chain for explainer
+        reasoning_chain = [
+            f"Base Score: {decision.score_breakdown['base_score']:.4f}",
+            f"Kill Chain Multiplier: {decision.score_breakdown['kill_chain_multiplier']}x",
+            f"FP Adjustment: {decision.score_breakdown['fp_adjustment']:.2f}",
+            f"Escalation Guard Applied: {decision.score_breakdown['escalation_guard_applied']}",
+            f"FP Risk Factors: {', '.join(fp_assessment.risk_factors)}"
+        ]
+        
+        # 5. Generate LLM explanation via ThreatExplainer
+        import asyncio
+        from app.intelligence.explainer import ThreatExplainer
+        from app.memory.memory_store import IPProfile
+        
+        explainer = ThreatExplainer()
+        ip_profile_obj = IPProfile(
+            ip_address=source_ip,
+            threat_count=ip_rep.threat_count,
+            last_seen=ip_rep.last_seen.isoformat(),
+            is_blocked=ip_rep.is_blocked,
+            attack_events=ip_rep.attack_history
         )
         
-        engine = ReasoningEngine()
-        decision = engine.decide(ctx)
-        action = decision.action.db_value
+        explanation = asyncio.run(explainer.explain_threat(
+            reasoning_chain=reasoning_chain,
+            action_taken=action,
+            anomaly_score=decision.final_score,
+            ip_profile=ip_profile_obj,
+            attack_pattern=threat_type,
+            threat_event_id=threat_event_id,
+            kill_chain_stage=kc_stage
+        ))
 
-        # Build context for the LLM explanation
-        threat_type = _classify_threat_type({
-            "request_rate": log.request_rate or 0,
-            "port_entropy": 0,  # would come from features in production
-            "session_deviation": anomaly.behavioral_deviation,
-            "repeated_offender": repeated_offender,
-        })
-
-        context = {
-            "ip": source_ip,
-            "score": anomaly.combined_score,
-            "risk_level": anomaly.risk_level,
-            "threat_type": threat_type,
-            "history_count": ip_rep.threat_count,
-            "repeated_offender": repeated_offender,
-            "action": action,
-        }
-
-        # 4. Generate LLM explanation
-        explanation = _generate_explanation(context)
-
-        # 5. Persist ThreatEvent
+        # 6. Persist ThreatEvent
         threat_event = ThreatEvent(
             id=uuid.UUID(threat_event_id),
             source_ip=source_ip,
             threat_type=threat_type,
-            confidence_score=decision.confidence,
+            confidence_score=decision.final_score,
             action_taken=action,
-            agent_reasoning=explanation + "\n\nReasoning Chain:\n" + "\n".join(f"- {step}" for step in decision.reasoning_chain),
+            agent_reasoning=explanation + "\n\nScore Breakdown:\n" + "\n".join(f"- {k}: {v}" for k, v in decision.score_breakdown.items()),
             resolved=False,
         )
         session.add(threat_event)
