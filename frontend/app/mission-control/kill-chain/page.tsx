@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Crosshair, ShieldAlert, Activity, ChevronRight, X } from "lucide-react";
+import { useSimulation } from "@/lib/simulation-store";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000")).replace(/\/$/, "");
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -28,13 +29,14 @@ function StageBadge({ stage, pulse = false }: { stage: string, pulse?: boolean }
 }
 
 export default function KillChainPage() {
-  const { data: activeAttackers, mutate, error: attackersError } = useSWR(
+  const sim = useSimulation();
+  const { data: apiAttackers, mutate, error: attackersError } = useSWR(
     `${API_URL}/api/v1/kill-chain/active`,
     fetcher,
     { refreshInterval: 5000 }
   );
 
-  const { data: stats, error: statsError } = useSWR(
+  const { data: apiStats, error: statsError } = useSWR(
     `${API_URL}/api/v1/kill-chain/stats`,
     fetcher,
     { refreshInterval: 5000 }
@@ -59,7 +61,48 @@ export default function KillChainPage() {
     );
   }
 
-  if (!activeAttackers || !stats) {
+  // ── Merge Logic ──
+  const simAttackersMap: Record<string, any> = {};
+  sim.state.events
+    .filter(e => e.attack_type !== "normal")
+    .forEach(e => {
+      const stage = e.risk_level === "CRITICAL" ? "EXPLOITATION" : e.risk_level === "HIGH" ? "ENUMERATION" : "RECONNAISSANCE";
+      if (!simAttackersMap[e.source_ip]) {
+        simAttackersMap[e.source_ip] = {
+          source_ip: e.source_ip,
+          current_stage: stage,
+          stage_history: [],
+          first_stage_seen: e.timestamp,
+          last_activity: e.timestamp,
+          predicted_next_action: "Potential persistence attempt",
+          is_simulated: true
+        };
+      }
+      simAttackersMap[e.source_ip].stage_history.push({
+        stage,
+        timestamp: e.timestamp,
+        confidence: e.anomaly_score
+      });
+      // Update to most recent stage
+      if (new Date(e.timestamp) > new Date(simAttackersMap[e.source_ip].last_activity)) {
+        simAttackersMap[e.source_ip].current_stage = stage;
+        simAttackersMap[e.source_ip].last_activity = e.timestamp;
+      }
+    });
+
+  const activeAttackers = [...Object.values(simAttackersMap), ...(apiAttackers ?? [])];
+  
+  const stats = apiStats ? { ...apiStats } : {
+    total_active: activeAttackers.length,
+    stage_distribution: {
+      RECONNAISSANCE: activeAttackers.filter(a => a.current_stage === "RECONNAISSANCE").length,
+      ENUMERATION: activeAttackers.filter(a => a.current_stage === "ENUMERATION").length,
+      EXPLOITATION: activeAttackers.filter(a => a.current_stage === "EXPLOITATION").length,
+      PERSISTENCE: activeAttackers.filter(a => a.current_stage === "PERSISTENCE").length,
+    }
+  };
+
+  if (!apiAttackers && activeAttackers.length === 0) {
     return (
       <div className="flex items-center gap-3 text-[#888] font-mono animate-pulse p-10">
         <Activity size={18} />

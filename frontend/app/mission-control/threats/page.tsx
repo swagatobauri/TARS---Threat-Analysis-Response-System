@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import useSWR from "swr";
 import { Search, ChevronDown, ChevronRight, Check, X, Crosshair, Link2, ShieldAlert } from "lucide-react";
 import Link from "next/link";
+import { useSimulation } from "@/lib/simulation-store";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -133,6 +134,7 @@ export default function ThreatsPage() {
   const [filterRisk, setFilterRisk] = useState("ALL");
   const [searchIp, setSearchIp] = useState("");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const sim = useSimulation();
 
   const { data: apiThreats, mutate, error } = useSWR(
     `${API}/api/v1/threats?limit=150`,
@@ -157,7 +159,25 @@ export default function ThreatsPage() {
     );
   }
 
-  let threats: any[] = apiThreats ?? [];
+  // ── Merge Logic ──
+  const simThreats = sim.state.events
+    .filter(e => e.attack_type !== "normal")
+    .map(e => ({
+      id: e.id,
+      created_at: e.timestamp,
+      source_ip: e.source_ip,
+      threat_type: e.attack_type,
+      confidence_score: e.anomaly_score,
+      risk_level: e.risk_level,
+      action_taken: e.action === "BLOCK_IP" ? "BLOCK" : e.action,
+      agent_reasoning: "Autonomous detection during live simulation.",
+      kill_chain_stage: e.risk_level === "CRITICAL" ? "EXPLOITATION" : e.risk_level === "HIGH" ? "ENUMERATION" : "RECONNAISSANCE",
+      is_simulated: true
+    }));
+
+  let threats: any[] = [...simThreats, ...(apiThreats ?? [])].sort((a, b) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   if (filterRisk !== "ALL") {
     threats = threats.filter((t) => {

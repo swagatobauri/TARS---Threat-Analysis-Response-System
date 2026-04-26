@@ -3,6 +3,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { Check, X, Clock, ShieldAlert } from "lucide-react";
+import { useSimulation } from "@/lib/simulation-store";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000")).replace(/\/$/, "");
 
@@ -27,7 +28,8 @@ type Approval = {
 };
 
 export default function ApprovalsPage() {
-  const { data: pendingApprovals, mutate, error } = useSWR<Approval[]>(
+  const sim = useSimulation();
+  const { data: apiApprovals, mutate, error } = useSWR<Approval[]>(
     `${API_URL}/api/v1/safety/approvals?status=PENDING`,
     fetcher,
     {
@@ -40,7 +42,28 @@ export default function ApprovalsPage() {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
+  // ── Merge Logic ──
+  const simApprovals = sim.state.events
+    .filter(e => e.risk_level === "CRITICAL" && e.action === "BLOCK_IP")
+    .map(e => ({
+      id: `sim-${e.id}`,
+      proposed_action: "BLOCK",
+      confidence_score: e.anomaly_score,
+      expires_at: new Date(new Date(e.timestamp).getTime() + 5 * 60000).toISOString(),
+      threat_event_id: e.id,
+      reasoning_summary: `[SIMULATION] Critical ${e.attack_type} detected from ${e.source_ip}. Automated block proposed.`,
+      is_simulated: true
+    }));
+
+  const pendingApprovals = [...simApprovals, ...(apiApprovals ?? [])];
+
   const handleApprove = async (id: string) => {
+    if (id.startsWith("sim-")) {
+      // For simulation, just remove it locally (if we had a way to track resolved sim events)
+      // For now, we'll just mock the success
+      alert("Simulation Approval Processed: Action Executed.");
+      return;
+    }
     try {
       const res = await fetch(
         `${API_URL}/api/v1/safety/approvals/${id}/approve`,
@@ -109,7 +132,7 @@ export default function ApprovalsPage() {
       </div>
     );
 
-  if (!pendingApprovals)
+  if (!apiApprovals && pendingApprovals.length === 0)
     return (
       <div className="flex items-center gap-3 text-[#888] font-mono animate-pulse">
         <Clock size={18} />

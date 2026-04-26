@@ -5,6 +5,7 @@ import { Search, Globe, ShieldAlert, Activity } from "lucide-react";
 import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import useSWR from "swr";
 import { format } from "date-fns";
+import { useSimulation } from "@/lib/simulation-store";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
 const API_URL = BASE_URL.replace(/\/$/, "");
@@ -16,31 +17,52 @@ const fetcher = (url: string) => fetch(url).then((res) => {
 
 export default function IPIntelligencePage() {
   const [ip, setIp] = useState("");
-  const [searchIp, setSearchIp] = useState("192.168.1.5");
+  const [searchIp, setSearchIp] = useState("185.15.54.212");
+  const sim = useSimulation();
   
-  const { data: decisions, error, isValidating } = useSWR(
+  const { data: apiDecisions, error, isValidating } = useSWR(
     `${API_URL}/api/v1/intelligence/decisions`,
     fetcher,
     { refreshInterval: 5000 }
   );
 
   const profile = useMemo(() => {
-    if (!Array.isArray(decisions) || decisions.length === 0) return null;
-    const latest = decisions[0];
+    // 1. Get Simulation Events for this IP
+    const simEvents = sim.state.events.filter(e => e.source_ip === searchIp);
+    const simDecisions = simEvents.filter(e => e.attack_type !== "normal").map(e => ({
+      source_ip: e.source_ip,
+      confidence_score: e.anomaly_score,
+      threat_type: e.attack_type,
+      action_taken: e.action === "BLOCK_IP" ? "BLOCK" : e.action,
+      created_at: e.timestamp,
+      is_simulated: true
+    }));
+
+    // 2. Get Backend Decisions for this IP
+    const backendDecisions = (apiDecisions ?? []).filter((d: any) => d.source_ip === searchIp);
+
+    const allDecisions = [...simDecisions, ...backendDecisions].sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    if (allDecisions.length === 0) return null;
+
+    const latest = allDecisions[0];
     return {
-      ip_address: latest.source_ip || searchIp,
+      ip_address: searchIp,
       reputation_score: latest.confidence_score || 0.0,
-      risk_category: latest.confidence_score > 0.8 ? "CRITICAL" : "MEDIUM",
-      total_events: decisions.length,
-      attack_events: decisions.filter((d: any) => d.action_taken === "BLOCK").length,
+      risk_category: latest.confidence_score > 0.8 ? "CRITICAL" : latest.confidence_score > 0.5 ? "HIGH" : "MEDIUM",
+      total_events: allDecisions.length + simEvents.filter(e => e.attack_type === "normal").length,
+      attack_events: allDecisions.length,
       false_positives: 0,
       attack_pattern: latest.threat_type || "anomaly_detected",
-      timeline: Array.isArray(decisions) ? decisions.map((d: any, i: number) => ({
+      timeline: allDecisions.map((d: any) => ({
         date: d.created_at,
         events: 1
-      })) : []
+      })),
+      decisions: allDecisions
     };
-  }, [decisions, searchIp]);
+  }, [apiDecisions, sim.state.events, searchIp]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +75,7 @@ export default function IPIntelligencePage() {
     ? strokeDasharray - (strokeDasharray * profile.reputation_score)
     : strokeDasharray;
 
-  if (!profile && !error && !decisions) return (
+  if (!profile && !error && !apiDecisions) return (
     <div className="flex items-center justify-center h-full text-[#888] font-mono animate-pulse">
       <Globe className="mr-3 animate-spin-slow" />
       SYNCHRONIZING WITH INTELLIGENCE CORE...
@@ -189,8 +211,8 @@ export default function IPIntelligencePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {Array.isArray(decisions) && decisions.slice(0, 10).map((d: any) => (
-                    <tr key={d.threat_event_id}>
+                  {Array.isArray(profile.decisions) && profile.decisions.slice(0, 10).map((d: any) => (
+                    <tr key={d.threat_event_id || d.id}>
                       <td className="py-3 border-b border-[#1a1a1a] text-[#888]">{format(new Date(d.created_at), "yyyy-MM-dd HH:mm")}</td>
                       <td className="py-3 border-b border-[#1a1a1a] text-[#888]">{d.confidence_score.toFixed(4)}</td>
                       <td className={`py-3 border-b border-[#1a1a1a] ${d.action_taken === 'BLOCK' ? 'text-[#ff4444]' : 'text-[#ffaa00]'}`}>{d.action_taken}</td>
