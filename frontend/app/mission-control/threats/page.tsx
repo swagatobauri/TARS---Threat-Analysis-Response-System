@@ -322,7 +322,7 @@ export default function ThreatsPage() {
                   )}
                 </React.Fragment>
               ))
-            : []}
+            : [])}
           </tbody>
         </table>
       </div>

@@ -183,8 +183,8 @@ export default function ApprovalsPage() {
               </div>
             );
           }) : null
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
