@@ -4,8 +4,8 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/TARS"
-    SYNC_DATABASE_URL: str = "postgresql+psycopg2://postgres:postgres@localhost:5432/TARS"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./tars.db"
+    SYNC_DATABASE_URL: str = "sqlite:///./tars.db"
     REDIS_URL: str = "redis://localhost:6379/0"
     
     # Security / Auth
@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     
     # Application State
     DEBUG: bool = True
+    DEMO_MODE: bool = False
     MODEL_PATH: str = "./ml_models/"
 
     # Detection Thresholds

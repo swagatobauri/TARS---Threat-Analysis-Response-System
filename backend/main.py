@@ -27,6 +27,33 @@ from app.api.metrics import router as metrics_router
 async def lifespan(app: FastAPI):
     # Startup Event
     logger.info("TARS API Starting up...")
+    
+    if settings.DEMO_MODE:
+        logger.info("🚀 DEMO MODE ACTIVE: Starting internal background loops...")
+        import asyncio
+        from app.tasks.detection import detect_anomaly
+        from app.metrics.validator import MetricsComputer
+
+        async def run_detection_loop():
+            while True:
+                try:
+                    await asyncio.to_thread(detect_anomaly)
+                except Exception as e:
+                    logger.error(f"Error in background detection: {e}")
+                await asyncio.sleep(5) # Scan every 5s in demo mode
+
+        async def run_metrics_loop():
+            computer = MetricsComputer()
+            while True:
+                try:
+                    await asyncio.to_thread(computer.compute_window_metrics)
+                except Exception as e:
+                    logger.error(f"Error in background metrics: {e}")
+                await asyncio.sleep(600) # Compute every 10 mins in demo mode
+
+        asyncio.create_task(run_detection_loop())
+        asyncio.create_task(run_metrics_loop())
+
     logger.info(f"Connecting to database at {settings.DATABASE_URL}")
     logger.info(f"Loading ML models from {settings.MODEL_PATH}")
     

@@ -15,27 +15,40 @@ from app.core.config import settings
 
 
 def get_redis_client() -> redis.Redis:
-    return redis.Redis.from_url(settings.REDIS_URL, decode_responses=True)
+    try:
+        return redis.Redis.from_url(settings.REDIS_URL, decode_responses=True, socket_timeout=2)
+    except Exception:
+        return None
 
 
 CHANNEL = "tars:events"
+# In-memory bus for Demo Mode
+_memory_bus = []
 
 
 def publish_event(event_type: str, data: Dict[str, Any]) -> None:
     """
-    Publish a system event to the Redis pub/sub channel.
-
-    event_type: one of 'threat_detected', 'action_executed',
-                'threshold_updated', 'ip_blocked', 'model_retrained'
-    data: arbitrary payload dict
+    Publish a system event to the Redis pub/sub channel or internal memory bus.
     """
-    client = get_redis_client()
     event = {
         "event_type": event_type,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "payload": data,
     }
-    client.publish(CHANNEL, json.dumps(event))
+    
+    client = get_redis_client()
+    if client:
+        try:
+            client.publish(CHANNEL, json.dumps(event))
+            return
+        except Exception:
+            pass
+            
+    # Fallback to memory bus if Redis is down or not configured
+    _memory_bus.append(event)
+    # Keep memory bus small
+    if len(_memory_bus) > 100:
+        _memory_bus.pop(0)
 
 
 # ── Convenience publishers ──
