@@ -1,16 +1,17 @@
-services:
-  # 1. PostgreSQL Database
-  - type: database
-    name: tars-db
+databases:
+  - name: tars-db
     databaseName: tars
     user: tars_user
+    plan: free # Use free tier for database
 
-  # 2. Redis Cache
+services:
+  # 1. Redis Cache
   - type: redis
     name: tars-redis
+    plan: free
     ipAllowList: [] # Only allow internal connections
 
-  # 3. Backend API (FastAPI)
+  # 2. Backend API (FastAPI)
   - type: web
     name: tars-backend
     env: python
@@ -27,11 +28,11 @@ services:
           name: tars-redis
           property: connectionString
       - key: GROQ_API_KEY
-        sync: false # You will enter this in the UI
+        sync: false 
       - key: SHADOW_MODE
         value: "False"
 
-  # 4. Celery Worker
+  # 3. Celery Worker
   - type: worker
     name: tars-worker
     env: python
@@ -48,7 +49,7 @@ services:
           name: tars-redis
           property: connectionString
 
-  # 5. Frontend (Next.js)
+  # 4. Frontend (Next.js)
   - type: web
     name: tars-frontend
     env: node
