@@ -134,7 +134,7 @@ export default function KillChainPage() {
                       </td>
                     </tr>
                   ) : (
-                    {(activeAttackers || []).map((attacker: any) => (
+                  (activeAttackers || []).map((attacker: any) => (
                       <tr 
                         key={attacker.source_ip} 
                         onClick={() => setSelectedAttacker(attacker)}

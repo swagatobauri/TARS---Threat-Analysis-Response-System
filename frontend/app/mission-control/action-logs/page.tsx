@@ -5,7 +5,7 @@ import { Download, Filter, Search } from "lucide-react";
 import { format } from "date-fns";
 
 // Mock Data
-const MOCK_LOGS = Array.from({ length: 25 })( || []).map((_, i) => ({
+const MOCK_LOGS = Array.from({ length: 25 }).map((_, i) => ({
   id: `log-${i}`,
   time: new Date(Date.now() - i * 1500000).toISOString(),
   ip: `192.168.1.${Math.floor(Math.random() * 255)}`,
@@ -67,7 +67,7 @@ export default function ActionLogsPage() {
             </tr>
           </thead>
           <tbody>
-            {logs( || []).map((log) => (
+            {(logs || []).map((log) => (
               <tr 
                 key={log.id} 
                 className={`border-b border-[#1a1a1a] hover:bg-[#111] transition-colors ${!log.success ? 'border-l-2 border-l-[#ff4444]' : ''}`}
