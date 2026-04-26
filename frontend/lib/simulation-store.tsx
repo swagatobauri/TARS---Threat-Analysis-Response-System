@@ -51,6 +51,8 @@ type SimState = {
   cumulativeStats: {
     totalEvents: number;
     totalBlocked: number;
+    totalCriticals: number;
+    totalHighs: number;
     tp: number;
     fp: number;
     fn: number;
@@ -140,6 +142,8 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     cumulativeStats: {
       totalEvents: 0,
       totalBlocked: 0,
+      totalCriticals: 0,
+      totalHighs: 0,
       tp: 0,
       fp: 0,
       fn: 0,
@@ -162,7 +166,14 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
           ...parsed,
           blockedIps: new Set(parsed.blockedIps || []),
           resolvedEvents: new Set(parsed.resolvedEvents || []),
-          isRunning: false
+          isRunning: false,
+          cumulativeStats: parsed.cumulativeStats || {
+            totalEvents: parsed.events?.length || 0,
+            totalBlocked: parsed.actions?.length || 0,
+            totalCriticals: parsed.events?.filter((e: any) => e.risk_level === "CRITICAL").length || 0,
+            totalHighs: parsed.events?.filter((e: any) => e.risk_level === "HIGH").length || 0,
+            tp: 0, fp: 0, fn: 0
+          }
         }));
       } catch (e) {}
     }
@@ -191,9 +202,12 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
       const blockedIps = new Set(prev.blockedIps);
       const newActions: AgentAction[] = [];
 
-      let newTp = 0, newFp = 0, newFn = 0;
+      let newTp = 0, newFp = 0, newFn = 0, newCrit = 0, newHigh = 0;
 
       newEvents.forEach(e => {
+        if (e.risk_level === "CRITICAL") newCrit++;
+        if (e.risk_level === "HIGH") newHigh++;
+
         if (e.attack_type !== "normal" && e.risk_level !== "LOW") newTp++;
         else if (e.attack_type === "normal" && e.risk_level !== "LOW") newFp++;
         else if (e.attack_type !== "normal" && e.risk_level === "LOW") newFn++;
@@ -217,6 +231,8 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         cumulativeStats: {
           totalEvents: (prev.cumulativeStats?.totalEvents || 0) + newEvents.length,
           totalBlocked: (prev.cumulativeStats?.totalBlocked || 0) + newActions.length,
+          totalCriticals: (prev.cumulativeStats?.totalCriticals || 0) + newCrit,
+          totalHighs: (prev.cumulativeStats?.totalHighs || 0) + newHigh,
           tp: (prev.cumulativeStats?.tp || 0) + newTp,
           fp: (prev.cumulativeStats?.fp || 0) + newFp,
           fn: (prev.cumulativeStats?.fn || 0) + newFn,
@@ -331,12 +347,25 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
       const timestamp = new Date().toLocaleTimeString();
       const formattedLogs = logsToPush.map(l => `${timestamp}  ${l}`);
 
+      let newCrit = 0, newHigh = 0;
+      batch.forEach(e => {
+        if (e.risk_level === "CRITICAL") newCrit++;
+        if (e.risk_level === "HIGH") newHigh++;
+      });
+
       return {
         ...current,
         events: [...current.events, ...batch].slice(-500),
         actions: [...current.actions, ...newActions].slice(-200),
         logs: [...current.logs, ...formattedLogs].slice(-100),
-        blockedIps
+        blockedIps,
+        cumulativeStats: {
+          ...current.cumulativeStats,
+          totalEvents: (current.cumulativeStats?.totalEvents || 0) + batch.length,
+          totalBlocked: (current.cumulativeStats?.totalBlocked || 0) + newActions.length,
+          totalCriticals: (current.cumulativeStats?.totalCriticals || 0) + newCrit,
+          totalHighs: (current.cumulativeStats?.totalHighs || 0) + newHigh,
+        }
       };
     });
   }, [pushAgentMessage]);
@@ -360,7 +389,7 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     logs: [`[SYS] Target acquired: ${target}. Sensors recalibrated.`],
     blockedIps: new Set(),
     resolvedEvents: new Set(),
-    cumulativeStats: { totalEvents: 0, totalBlocked: 0, tp: 0, fp: 0, fn: 0 }
+    cumulativeStats: { totalEvents: 0, totalBlocked: 0, totalCriticals: 0, totalHighs: 0, tp: 0, fp: 0, fn: 0 }
   })), []);
   const setMode = useCallback((mode: string) => setState(p => ({ ...p, mode })), []);
   const setAttackType = useCallback((at: string) => setState(p => ({ ...p, attackType: at })), []);
@@ -378,15 +407,15 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     logs: ["[SYS] Simulation engine reset."], 
     blockedIps: new Set(), 
     resolvedEvents: new Set(),
-    cumulativeStats: { totalEvents: 0, totalBlocked: 0, tp: 0, fp: 0, fn: 0 }
+    cumulativeStats: { totalEvents: 0, totalBlocked: 0, totalCriticals: 0, totalHighs: 0, tp: 0, fp: 0, fn: 0 }
   })), []);
 
   const getStats = useCallback(() => {
     const events = state.events;
     return {
       totalEvents: state.cumulativeStats?.totalEvents || events.length,
-      criticals: events.filter(e => e.risk_level === "CRITICAL").length,
-      highs: events.filter(e => e.risk_level === "HIGH").length,
+      criticals: state.cumulativeStats?.totalCriticals || events.filter(e => e.risk_level === "CRITICAL").length,
+      highs: state.cumulativeStats?.totalHighs || events.filter(e => e.risk_level === "HIGH").length,
       blocked: state.cumulativeStats?.totalBlocked || state.blockedIps.size,
       activeThreats: events.filter(e => e.risk_level !== "LOW" && Date.now() - new Date(e.timestamp).getTime() < 30000).length,
       recentScores: events.slice(-30).map(e => ({ t: e.timestamp, s: e.anomaly_score })),
