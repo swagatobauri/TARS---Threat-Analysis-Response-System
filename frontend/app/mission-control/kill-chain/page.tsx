@@ -134,7 +134,7 @@ export default function KillChainPage() {
                       </td>
                     </tr>
                   ) : (
-                  {Array.isArray(activeAttackers) && activeAttackers.map((attacker: any) => (
+                  Array.isArray(activeAttackers) && activeAttackers.map((attacker: any) => (
                       <tr 
                         key={attacker.source_ip} 
                         onClick={() => setSelectedAttacker(attacker)}
@@ -154,7 +154,7 @@ export default function KillChainPage() {
                           <ChevronRight size={16} className="text-[#444] inline-block" />
                         </td>
                       </tr>
-                    ))
+                    )
                   )}
                 </tbody>
               </table>
