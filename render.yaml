@@ -2,8 +2,9 @@ services:
   # 1. TARS All-in-One Backend (API + Detection Loop)
   - type: web
     name: tars-backend-demo
-    env: python
+    runtime: python
     plan: free
+    region: oregon # Common free region
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn -w 1 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT
     envVars:
@@ -21,13 +22,11 @@ services:
   # 2. TARS Frontend
   - type: web
     name: tars-frontend-demo
-    env: node
+    runtime: node
     plan: free
+    region: oregon
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: tars-backend-demo
-          property: host
+        value: "https://tars-backend-demo.onrender.com" # Placeholder
