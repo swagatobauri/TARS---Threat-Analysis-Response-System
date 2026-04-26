@@ -77,6 +77,13 @@ type SimStore = {
     blocked: number;
     activeThreats: number;
     recentScores: { t: string; s: number }[];
+    cumulativeStats?: {
+      totalEvents: number;
+      totalBlocked: number;
+      tp: number;
+      fp: number;
+      fn: number;
+    };
   };
 };
 
