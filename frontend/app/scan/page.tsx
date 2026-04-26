@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Terminal, ShieldAlert, Fingerprint, Lock, Globe } from "lucide-react";
+import { ArrowLeft, Terminal, ShieldAlert, Fingerprint, Lock, Globe, MapPin } from "lucide-react";
 
 export default function SelfScanPage() {
   const [step, setStep] = useState(0);
@@ -16,36 +16,10 @@ export default function SelfScanPage() {
         await new Promise((r) => setTimeout(r, 1500));
         setStep(1);
 
-        // Fetch IP and Geo data with fallback for ad-blockers
-        let geoData = {};
-        try {
-          const res = await fetch("https://ipwho.is/"); // ipwho.is is less likely to be blocked
-          if (!res.ok) throw new Error("Primary API failed");
-          geoData = await res.json();
-          // ipwho.is returns slightly different keys than ipapi.co, normalize them:
-          if ((geoData as any).ip) {
-            geoData = {
-              ip: (geoData as any).ip,
-              org: (geoData as any).connection?.org || "Unknown ASN",
-              city: (geoData as any).city,
-              region: (geoData as any).region,
-              country_name: (geoData as any).country,
-              latitude: (geoData as any).latitude,
-              longitude: (geoData as any).longitude,
-            };
-          }
-        } catch (e) {
-          // If all network requests are blocked by Brave/uBlock, gracefully degrade
-          geoData = {
-            ip: "HIDDEN (PROXY DETECTED)",
-            org: "ENCRYPTED ROUTING",
-            city: "Classified",
-            region: "Classified",
-            country_name: "Classified",
-            latitude: "UNKNOWN",
-            longitude: "UNKNOWN",
-          };
-        }
+        // We fetch from our OWN Next.js backend to completely bypass browser ad-blockers
+        const res = await fetch("/api/me");
+        if (!res.ok) throw new Error("Backend API failed");
+        const geoData = await res.json();
 
         // Gather browser fingerprinting info
         const browserData = {
@@ -87,14 +61,22 @@ export default function SelfScanPage() {
       <div className="min-h-screen bg-black text-[#cc0000] flex flex-col items-center justify-center font-mono p-6 text-center">
         <ShieldAlert size={48} className="mb-4" />
         <h1 className="text-2xl font-bold tracking-widest mb-2">CONNECTION BLOCKED</h1>
-        <p className="text-[#666]">Ad-blocker or privacy shield prevented the scan.</p>
-        <p className="text-[#666] mt-1">Good. Keep your shields up.</p>
+        <p className="text-[#666]">System could not establish a clean trace.</p>
         <Link href="/" className="mt-8 border border-[#cc0000] px-6 py-2 hover:bg-[#cc0000] hover:text-black transition-colors">
           RETURN
         </Link>
       </div>
     );
   }
+
+  // Calculate bounding box for map
+  const getMapBox = () => {
+    if (!data || !data.latitude || !data.longitude) return "";
+    const lat = parseFloat(data.latitude);
+    const lon = parseFloat(data.longitude);
+    const offset = 0.05;
+    return `${lon - offset},${lat - offset},${lon + offset},${lat + offset}`;
+  };
 
   return (
     <div className="min-h-screen bg-black text-[#00ff88] flex flex-col p-6 font-mono selection:bg-[#cc0000] selection:text-white relative overflow-hidden">
@@ -120,12 +102,12 @@ export default function SelfScanPage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-4xl w-full mx-auto mt-12 relative z-10">
+      <main className="flex-1 max-w-5xl w-full mx-auto mt-12 relative z-10 pb-20">
         
         {/* Loading State */}
         {step < 4 && (
           <div className="flex flex-col items-center justify-center pt-24">
-            <div className="text-4xl mb-8 animate-pulse text-[#cc0000]">
+            <div className="text-4xl mb-8 animate-pulse text-[#cc0000] text-center px-4">
               {step === 0 && "INITIALIZING NEURAL LINK..."}
               {step === 1 && "BYPASSING PROXIES..."}
               {step === 2 && "EXTRACTING FINGERPRINT..."}
@@ -157,7 +139,7 @@ export default function SelfScanPage() {
             </div>
 
             {/* Data Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
               {/* Network Identity */}
               <div className="border border-[#333] bg-[#050505] p-6 relative overflow-hidden">
@@ -168,15 +150,15 @@ export default function SelfScanPage() {
                 <div className="space-y-4 text-sm">
                   <div className="flex justify-between border-b border-[#111] pb-2">
                     <span className="text-[#555]">PUBLIC IP</span>
-                    <span className="text-white font-bold tracking-wider">{data.ip}</span>
+                    <span className="text-white font-bold tracking-wider">{data.ip || "UNKNOWN"}</span>
                   </div>
                   <div className="flex justify-between border-b border-[#111] pb-2">
                     <span className="text-[#555]">ISP / ASN</span>
-                    <span className="text-[#aaa]">{data.org}</span>
+                    <span className="text-[#aaa] text-right max-w-[60%] truncate" title={data.org}>{data.org || "UNKNOWN"}</span>
                   </div>
                   <div className="flex justify-between border-b border-[#111] pb-2">
                     <span className="text-[#555]">LOCATION</span>
-                    <span className="text-[#aaa]">{data.city}, {data.region}, {data.country_name}</span>
+                    <span className="text-[#aaa] text-right">{data.city}, {data.country_name}</span>
                   </div>
                   <div className="flex justify-between border-b border-[#111] pb-2">
                     <span className="text-[#555]">COORDINATES</span>
@@ -184,7 +166,7 @@ export default function SelfScanPage() {
                   </div>
                   <div className="flex justify-between border-b border-[#111] pb-2">
                     <span className="text-[#555]">TIMEZONE</span>
-                    <span className="text-[#aaa]">{data.timeZone}</span>
+                    <span className="text-[#aaa] text-right truncate max-w-[50%]">{data.timeZone}</span>
                   </div>
                 </div>
               </div>
@@ -198,7 +180,7 @@ export default function SelfScanPage() {
                 <div className="space-y-4 text-sm">
                   <div className="flex justify-between border-b border-[#111] pb-2">
                     <span className="text-[#555]">OS / PLATFORM</span>
-                    <span className="text-[#aaa]">{data.platform}</span>
+                    <span className="text-[#aaa] text-right">{data.platform}</span>
                   </div>
                   <div className="flex justify-between border-b border-[#111] pb-2">
                     <span className="text-[#555]">CPU CORES</span>
@@ -216,6 +198,41 @@ export default function SelfScanPage() {
                     <span className="text-[#555]">CONNECTION</span>
                     <span className="text-[#aaa]">{data.connection.toUpperCase()}</span>
                   </div>
+                </div>
+              </div>
+
+              {/* Satellite Map */}
+              <div className="border border-[#333] bg-[#050505] p-6 relative overflow-hidden flex flex-col">
+                <div className="absolute top-0 left-0 w-1 h-full bg-[#cc0000]" />
+                <h3 className="text-xs tracking-[0.2em] text-[#666] uppercase mb-6 flex items-center gap-2">
+                  <MapPin size={14} className="text-[#cc0000]" /> Satellite Uplink
+                </h3>
+                
+                {data.latitude && data.longitude ? (
+                  <div className="flex-1 relative w-full h-[200px] border border-[#1a1a1a] bg-black overflow-hidden group">
+                    {/* CSS trick to make the map look like dark-mode hacker radar */}
+                    <div className="absolute inset-0 z-10 pointer-events-none border border-[#cc0000] opacity-50" />
+                    <div className="absolute top-1/2 left-0 w-full h-[1px] bg-[#cc0000] opacity-30 z-10" />
+                    <div className="absolute top-0 left-1/2 w-[1px] h-full bg-[#cc0000] opacity-30 z-10" />
+                    <div className="absolute top-1/2 left-1/2 w-4 h-4 border border-[#cc0000] rounded-full -translate-x-1/2 -translate-y-1/2 z-10 animate-ping" />
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${getMapBox()}&layer=mapnik&marker=${data.latitude},${data.longitude}`}
+                      style={{ 
+                        border: 0,
+                        filter: "invert(100%) sepia(100%) hue-rotate(300deg) saturate(300%) contrast(150%) brightness(50%)" 
+                      }}
+                      className="absolute inset-0 scale-[1.2]"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center border border-[#1a1a1a] bg-black text-[#444] text-[10px] uppercase tracking-widest">
+                    Location Fix Unavailable
+                  </div>
+                )}
+                <div className="mt-4 text-[10px] text-[#444] font-mono tracking-widest text-center uppercase">
+                  Live Geolocation Tracking
                 </div>
               </div>
 
