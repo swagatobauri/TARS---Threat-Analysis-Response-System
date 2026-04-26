@@ -32,6 +32,7 @@ class SafetyModeUpdate(BaseModel):
 class ThresholdUpdate(BaseModel):
     high_confidence: Optional[float] = None
     medium_confidence: Optional[float] = None
+    auto_rollback_minutes: Optional[int] = None
 
 class ApprovalAction(BaseModel):
     reviewer: str
@@ -76,17 +77,20 @@ class ApprovalQueueResponse(BaseModel):
 async def get_safety_status(db: AsyncSession = Depends(get_db)):
     shadow = redis.get("tars:config:shadow_mode")
     human = redis.get("tars:config:human_approval_mode")
+    high_t = redis.get("tars:threshold:HIGH")
+    med_t = redis.get("tars:threshold:MEDIUM")
+    rollback = redis.get("tars:config:auto_rollback")
     
     from sqlalchemy import func
     result = await db.execute(select(func.count()).select_from(AllowlistEntry).where(AllowlistEntry.is_active == True))
     allowlist_count = result.scalar()
     
     return SafetyStatus(
-        shadow_mode=shadow.lower() == "true" if shadow else settings.SHADOW_MODE,
-        human_approval_mode=human.lower() == "true" if human else settings.HUMAN_APPROVAL_MODE,
-        high_confidence_threshold=settings.HIGH_CONFIDENCE_THRESHOLD,
-        medium_confidence_threshold=settings.MEDIUM_CONFIDENCE_THRESHOLD,
-        auto_rollback_minutes=settings.AUTO_ROLLBACK_MINUTES,
+        shadow_mode=shadow.decode().lower() == "true" if shadow else settings.SHADOW_MODE,
+        human_approval_mode=human.decode().lower() == "true" if human else settings.HUMAN_APPROVAL_MODE,
+        high_confidence_threshold=float(high_t) if high_t else settings.HIGH_CONFIDENCE_THRESHOLD,
+        medium_confidence_threshold=float(med_t) if med_t else settings.MEDIUM_CONFIDENCE_THRESHOLD,
+        auto_rollback_minutes=int(rollback) if rollback else settings.AUTO_ROLLBACK_MINUTES,
         allowlist_count=allowlist_count
     )
 
@@ -104,6 +108,8 @@ def update_thresholds(update: ThresholdUpdate):
         redis.set("tars:threshold:HIGH", str(update.high_confidence))
     if update.medium_confidence is not None:
         redis.set("tars:threshold:MEDIUM", str(update.medium_confidence))
+    if update.auto_rollback_minutes is not None:
+        redis.set("tars:config:auto_rollback", str(update.auto_rollback_minutes))
     return {"status": "success", "message": "Thresholds updated"}
 
 @router.get("/approvals", response_model=List[ApprovalQueueResponse])

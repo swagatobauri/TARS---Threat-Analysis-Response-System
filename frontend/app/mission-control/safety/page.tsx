@@ -250,8 +250,9 @@ export default function SafetyControls() {
                 type="number" 
                 value={status.auto_rollback_minutes}
                 onChange={(e) => {
-                  // Assuming endpoint supports this, if not this is a mock update locally
-                  setStatus({...status, auto_rollback_minutes: parseInt(e.target.value)})
+                  const val = parseInt(e.target.value) || 0;
+                  setStatus({...status, auto_rollback_minutes: val});
+                  updateThreshold("auto_rollback_minutes", val);
                 }}
                 className="bg-[#111] border border-[#333] text-white px-3 py-2 rounded focus:outline-none focus:border-[#cc0000] w-24 font-mono"
               />
