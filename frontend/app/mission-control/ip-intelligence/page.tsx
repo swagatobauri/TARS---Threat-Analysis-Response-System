@@ -6,7 +6,8 @@ import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recha
 import useSWR from "swr";
 import { format } from "date-fns";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
+const API_URL = BASE_URL.replace(/\/$/, "");
 
 const fetcher = (url: string) => fetch(url).then((res) => {
   if (!res.ok) throw new Error("API Connection Failed");

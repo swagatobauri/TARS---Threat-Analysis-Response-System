@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { ShieldCheck, ShieldAlert, AlertTriangle, CheckCircle, Trash2, Plus } from "lucide-react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
+const API_URL = BASE_URL.replace(/\/$/, "");
 
 export default function SafetyControls() {
   const [status, setStatus] = useState<any>(null);
