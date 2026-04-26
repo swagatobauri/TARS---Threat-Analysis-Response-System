@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 
 // ── Types ──
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
