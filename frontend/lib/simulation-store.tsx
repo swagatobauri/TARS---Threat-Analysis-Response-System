@@ -98,7 +98,21 @@ function scoreAnomaly(bytes: number, dur: number, port: number, count: number): 
   if (dur < 0.05) s += 0.2;
   if (![80, 443, 53, 123].includes(port)) s += 0.15;
   s += Math.min(count / 100, 0.4);
-  return Math.min(s + Math.random() * 0.05, 1.0);
+  
+  // Base score calculation
+  let finalScore = Math.min(s + Math.random() * 0.05, 1.0);
+
+  // Introduce realistic False Positives (1% chance normal traffic spikes high)
+  if (s < 0.2 && Math.random() < 0.01) {
+    finalScore = 0.4 + (Math.random() * 0.4); // Spike to Medium or High
+  }
+  
+  // Introduce realistic False Negatives (2% chance attack traffic slips by low)
+  if (s > 0.6 && Math.random() < 0.02) {
+    finalScore = 0.1 + (Math.random() * 0.2); // Drop to Low
+  }
+
+  return finalScore;
 }
 
 function riskOf(s: number) {
