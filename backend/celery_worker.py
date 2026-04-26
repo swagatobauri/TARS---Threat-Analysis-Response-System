@@ -54,6 +54,10 @@ celery_app.conf.beat_schedule = {
         "task": "tasks.expire_pending_approvals",
         "schedule": 60.0,                # every 60 seconds
     },
+    "update-attacker-profiles": {
+        "task": "tasks.update_attacker_profiles",
+        "schedule": 300.0,               # every 5 minutes
+    },
 }
 
 

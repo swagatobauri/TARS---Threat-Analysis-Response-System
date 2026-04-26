@@ -53,6 +53,9 @@ class AgentContext:
     time_of_day: int
     attack_type_guess: Optional[str]
     confidence: float
+    # Kill Chain enhancements
+    kill_chain_stage: Optional[str] = None
+    is_progressing: bool = False
 
 
 @dataclass
@@ -87,6 +90,22 @@ class ReasoningEngine:
         
         base_multiplier = ctx.anomaly_score
         
+        # KILL CHAIN ENHANCEMENT
+        if ctx.kill_chain_stage:
+            stage_multipliers = {
+                "RECONNAISSANCE": 1.1,
+                "ENUMERATION": 1.3,
+                "EXPLOITATION": 1.6,
+                "PERSISTENCE": 1.8
+            }
+            multiplier = stage_multipliers.get(ctx.kill_chain_stage, 1.0)
+            base_multiplier *= multiplier
+            reasoning_chain.append(f"Stage {ctx.kill_chain_stage} detected → {multiplier}x multiplier applied")
+            
+        if ctx.is_progressing:
+            base_multiplier += 0.15
+            reasoning_chain.append(f"Progressing attacker profile → is_progressing=True (+0.15 score)")
+
         for action in ActionSpace:
             # A rough heuristic: action severity normalized (1 to 5) -> (0.2 to 1.0)
             # We want the action's normalized severity to match the base_multiplier.

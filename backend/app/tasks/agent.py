@@ -13,6 +13,7 @@ from celery import shared_task
 
 from app.core.config import settings
 from app.db.database import SyncSessionLocal
+from sqlalchemy import select
 from app.db.models import AnomalyScore, NetworkLog, ThreatEvent, IPReputation
 
 logger = logging.getLogger(__name__)
@@ -152,8 +153,35 @@ def run_agent_reasoning(self, anomaly_score_id: str):
 
         repeated_offender = ip_rep.threat_count >= 3
 
-        # 3. Decide action
-        action = _decide_action(anomaly.combined_score, anomaly.risk_level, repeated_offender)
+        # 3. Decide action via Intelligence Reasoning Engine & Kill Chain Integration
+        from app.intelligence.reasoning import ReasoningEngine, AgentContext
+        from app.kill_chain.integration import enrich_with_kill_chain
+        
+        threat_event_id = str(uuid.uuid4())
+        
+        kc_stage, is_progressing = enrich_with_kill_chain(session, source_ip, log, threat_event_id)
+        
+        # Fetch recent decisions for context
+        recent_threats = session.execute(
+            select(ThreatEvent).where(ThreatEvent.source_ip == source_ip).order_by(ThreatEvent.created_at.desc()).limit(10)
+        ).scalars().all()
+        
+        ctx = AgentContext(
+            anomaly_score=anomaly.combined_score,
+            risk_level=anomaly.risk_level,
+            source_ip=source_ip,
+            ip_history=ip_rep,
+            recent_decisions=recent_threats,
+            time_of_day=datetime.utcnow().hour,
+            attack_type_guess=None,
+            confidence=1.0,
+            kill_chain_stage=kc_stage,
+            is_progressing=is_progressing
+        )
+        
+        engine = ReasoningEngine()
+        decision = engine.decide(ctx)
+        action = decision.action.db_value
 
         # Build context for the LLM explanation
         threat_type = _classify_threat_type({
@@ -178,11 +206,12 @@ def run_agent_reasoning(self, anomaly_score_id: str):
 
         # 5. Persist ThreatEvent
         threat_event = ThreatEvent(
+            id=uuid.UUID(threat_event_id),
             source_ip=source_ip,
             threat_type=threat_type,
-            confidence_score=anomaly.combined_score,
+            confidence_score=decision.confidence,
             action_taken=action,
-            agent_reasoning=explanation,
+            agent_reasoning=explanation + "\n\nReasoning Chain:\n" + "\n".join(f"- {step}" for step in decision.reasoning_chain),
             resolved=False,
         )
         session.add(threat_event)
