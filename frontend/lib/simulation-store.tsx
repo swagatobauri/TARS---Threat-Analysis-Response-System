@@ -48,6 +48,13 @@ type SimState = {
   agentActive: boolean;
   mode: string;
   attackType: string;
+  cumulativeStats: {
+    totalEvents: number;
+    totalBlocked: number;
+    tp: number;
+    fp: number;
+    fn: number;
+  };
 };
 
 type SimStore = {
@@ -124,6 +131,13 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     agentActive: false,
     mode: "mixed",
     attackType: "brute_force",
+    cumulativeStats: {
+      totalEvents: 0,
+      totalBlocked: 0,
+      tp: 0,
+      fp: 0,
+      fn: 0,
+    },
   });
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -170,7 +184,13 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
       const blockedIps = new Set(prev.blockedIps);
       const newActions: AgentAction[] = [];
 
+      let newTp = 0, newFp = 0, newFn = 0;
+
       newEvents.forEach(e => {
+        if (e.attack_type !== "normal" && e.risk_level !== "LOW") newTp++;
+        else if (e.attack_type === "normal" && e.risk_level !== "LOW") newFp++;
+        else if (e.attack_type !== "normal" && e.risk_level === "LOW") newFn++;
+
         if (e.action === "BLOCK_IP" && !blockedIps.has(e.source_ip)) {
           blockedIps.add(e.source_ip);
           newActions.push({
@@ -187,6 +207,13 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         events: [...prev.events, ...newEvents].slice(-500),
         actions: [...prev.actions, ...newActions].slice(-200),
         blockedIps,
+        cumulativeStats: {
+          totalEvents: (prev.cumulativeStats?.totalEvents || 0) + newEvents.length,
+          totalBlocked: (prev.cumulativeStats?.totalBlocked || 0) + newActions.length,
+          tp: (prev.cumulativeStats?.tp || 0) + newTp,
+          fp: (prev.cumulativeStats?.fp || 0) + newFp,
+          fn: (prev.cumulativeStats?.fn || 0) + newFn,
+        }
       };
     });
   }, []);
@@ -233,7 +260,13 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
           : current.attackType;
         
         const cfg = ATTACK_VECTORS.find(v => v.id === aType) || ATTACK_VECTORS[0];
-        const srcIp = attackerIps[Math.floor(Math.random() * attackerIps.length)];
+        
+        // Generate dynamic IPs for continuous blocking, keeping some static for repeat offenses
+        const useStaticIp = Math.random() < 0.4;
+        const srcIp = useStaticIp 
+          ? attackerIps[Math.floor(Math.random() * attackerIps.length)]
+          : `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+          
         const count = aType === "ddos" ? 80 : aType === "brute_force" ? 30 : 15;
         const basePort = Math.floor(Math.random() * 1000);
 
@@ -320,14 +353,15 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
   const getStats = useCallback(() => {
     const events = state.events;
     return {
-      totalEvents: events.length,
+      totalEvents: state.cumulativeStats?.totalEvents || events.length,
       criticals: events.filter(e => e.risk_level === "CRITICAL").length,
       highs: events.filter(e => e.risk_level === "HIGH").length,
-      blocked: state.blockedIps.size,
+      blocked: state.cumulativeStats?.totalBlocked || state.blockedIps.size,
       activeThreats: events.filter(e => e.risk_level !== "LOW" && Date.now() - new Date(e.timestamp).getTime() < 30000).length,
       recentScores: events.slice(-30).map(e => ({ t: e.timestamp, s: e.anomaly_score })),
+      cumulativeStats: state.cumulativeStats,
     };
-  }, [state.events, state.blockedIps]);
+  }, [state.events, state.blockedIps, state.cumulativeStats]);
 
   return (
     <SimContext.Provider value={{ state, pushEvents, pushAction: () => {}, pushAgentMessage, pushLog, setRunning, setTarget, setAgentActive, setMode, setAttackType, resolveEvent, clearAll, getStats }}>
