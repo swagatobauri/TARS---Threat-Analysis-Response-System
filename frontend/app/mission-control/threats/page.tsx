@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import useSWR from "swr";
-import { Search, ChevronDown, ChevronRight, Check, X, Crosshair, Link2 } from "lucide-react";
+import { Search, ChevronDown, ChevronRight, Check, X, Crosshair, Link2, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
