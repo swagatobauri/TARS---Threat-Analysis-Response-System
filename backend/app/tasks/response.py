@@ -144,6 +144,11 @@ def execute_response(self, threat_event_id: str):
         _update_reputation(source_ip, action, session)
 
         session.commit()
+        
+        # 5. Enqueue validation
+        if action != "MONITOR":
+            from app.metrics.validator import validate_after_action
+            validate_after_action.apply_async(args=[str(action_log.id)], countdown=60)
 
         logger.info(
             "Response executed — threat=%s  action=%s  ip=%s  time=%.2fms  success=%s",

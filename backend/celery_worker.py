@@ -62,6 +62,14 @@ celery_app.conf.beat_schedule = {
         "task": "tasks.weekly_model_health_check",
         "schedule": crontab(day_of_week="sunday", hour=0, minute=0),
     },
+    "compute-metrics-15m": {
+        "task": "tasks.compute_metrics_15m",
+        "schedule": 900.0,               # every 15 minutes
+    },
+    "compute-daily-impact": {
+        "task": "tasks.compute_daily_impact",
+        "schedule": crontab(hour=0, minute=5), # daily at 12:05 AM
+    },
 }
 
 
