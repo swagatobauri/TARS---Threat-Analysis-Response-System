@@ -135,23 +135,29 @@ export default function LandingPage() {
 
         {/* CTA Buttons */}
         <div
-          className="flex gap-4"
+          className="flex flex-wrap justify-center gap-4 max-w-3xl"
           style={{
             opacity: showContent ? 1 : 0,
             transition: "opacity 1s 0.6s",
           }}
         >
           <Link
+            href="/scan"
+            className="border-2 border-[#00ff88] text-[#00ff88] px-8 py-4 font-mono text-sm tracking-widest uppercase hover:bg-[#00ff88] hover:text-black transition-all"
+          >
+            Scan My Connection
+          </Link>
+          <Link
             href="/dashboard"
             className="border-2 border-[#cc0000] text-[#cc0000] px-8 py-4 font-mono text-sm tracking-widest uppercase hover:bg-[#cc0000] hover:text-black transition-all"
           >
-            Enter Mission Control
+            Mission Control
           </Link>
           <Link
             href="/war-games"
             className="bg-[#cc0000] text-black px-8 py-4 font-mono text-sm tracking-widest uppercase font-bold hover:bg-[#ff0000] transition-all"
           >
-            Launch War Games
+            War Games
           </Link>
         </div>
 
@@ -167,7 +173,7 @@ export default function LandingPage() {
             <div
               key={i}
               className={
-                line.includes("LETHAL") || line.includes("watching")
+                line && (line.includes("LETHAL") || line.includes("watching"))
                   ? "text-[#cc0000]"
                   : ""
               }
