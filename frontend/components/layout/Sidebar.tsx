@@ -15,7 +15,8 @@ import {
   Link2,
   CheckSquare,
   BarChart,
-  ShieldCheck
+  ShieldCheck,
+  TerminalSquare
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -56,6 +57,7 @@ export default function Sidebar() {
     { name: "War Games", href: "/war-games", icon: Crosshair },
     { name: "Metrics & Proof", href: "/mission-control/metrics", icon: BarChart },
     { name: "Safety Controls", href: "/mission-control/safety", icon: ShieldCheck },
+    { name: "SDK Integration", href: "/mission-control/sdk", icon: TerminalSquare },
     { name: "System Health", href: "/mission-control/health", icon: HeartPulse },
   ];
 

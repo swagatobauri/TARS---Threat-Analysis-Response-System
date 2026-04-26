@@ -20,6 +20,7 @@ from app.api.health import router as health_router
 from app.api.safety import router as safety_router
 from app.api.kill_chain import router as kill_chain_router
 from app.api.metrics import router as metrics_router
+from app.api.sdk import router as sdk_router
 
 # ---------------------------------------------------------
 # Lifespan Context Manager
@@ -110,6 +111,7 @@ app.include_router(health_router, prefix="/api/v1/health", tags=["Health"])
 app.include_router(safety_router, prefix="/api/v1/safety", tags=["Safety"])
 app.include_router(kill_chain_router, prefix="/api/v1/kill-chain", tags=["Kill Chain"])
 app.include_router(metrics_router, prefix="/api/v1/metrics", tags=["Metrics"])
+app.include_router(sdk_router, prefix="/api/v1/sdk", tags=["SDK Integration"])
 
 if __name__ == "__main__":
     import uvicorn
