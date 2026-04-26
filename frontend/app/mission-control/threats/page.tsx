@@ -7,8 +7,7 @@ import Link from "next/link";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
-const API_URL = BASE_URL.replace(/\/$/, "");
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000")).replace(/\/$/, "");
 const API = API_URL;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

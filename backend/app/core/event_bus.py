@@ -14,11 +14,49 @@ import redis
 from app.core.config import settings
 
 
-def get_redis_client() -> redis.Redis:
-    try:
-        return redis.Redis.from_url(settings.REDIS_URL, decode_responses=True, socket_timeout=2)
-    except Exception:
-        return None
+class ResilientRedis:
+    """Mock Redis that falls back to local dictionary if connection fails."""
+    def __init__(self, url):
+        self.url = url
+        self._local = {}
+        try:
+            self.client = redis.Redis.from_url(url, decode_responses=True, socket_timeout=1)
+        except:
+            self.client = None
+
+    def get(self, key):
+        try:
+            return self.client.get(key) if self.client else self._local.get(key)
+        except:
+            return self._local.get(key)
+
+    def set(self, key, value):
+        try:
+            if self.client: return self.client.set(key, value)
+        except: pass
+        self._local[key] = value
+        return True
+
+    def delete(self, key):
+        try:
+            if self.client: return self.client.delete(key)
+        except: pass
+        self._local.pop(key, None)
+        return True
+
+    def publish(self, channel, message):
+        try:
+            if self.client: return self.client.publish(channel, message)
+        except: pass
+        return 0
+
+_redis_instance = None
+
+def get_redis_client() -> ResilientRedis:
+    global _redis_instance
+    if not _redis_instance:
+        _redis_instance = ResilientRedis(settings.REDIS_URL)
+    return _redis_instance
 
 
 CHANNEL = "tars:events"

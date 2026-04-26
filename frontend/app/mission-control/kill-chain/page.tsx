@@ -5,8 +5,7 @@ import useSWR from "swr";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { Crosshair, ShieldAlert, Activity, ChevronRight, X } from "lucide-react";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
-const API_URL = BASE_URL.replace(/\/$/, "");
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000")).replace(/\/$/, "");
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const STAGE_COLORS: Record<string, string> = {

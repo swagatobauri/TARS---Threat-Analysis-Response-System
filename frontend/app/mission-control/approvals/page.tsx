@@ -4,8 +4,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import { Check, X, Clock, ShieldAlert } from "lucide-react";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000");
-const API_URL = BASE_URL.replace(/\/$/, "");
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || (typeof window !== "undefined" && window.location.hostname.includes("onrender.com") ? window.location.origin.replace("frontend", "backend") : "http://localhost:8000")).replace(/\/$/, "");
 
 const fetcher = async (url: string) => {
   try {

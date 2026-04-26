@@ -29,6 +29,15 @@ async def lifespan(app: FastAPI):
     # Startup Event
     logger.info("TARS API Starting up...")
     
+    # 1. Create tables if they don't exist
+    try:
+        from app.db.database import sync_engine
+        from app.db.models import Base
+        Base.metadata.create_all(bind=sync_engine)
+        logger.info("Database tables initialized successfully.")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+    
     if settings.DEMO_MODE:
         logger.info("🚀 DEMO MODE ACTIVE: Starting internal background loops...")
         import asyncio

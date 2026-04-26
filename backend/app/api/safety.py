@@ -86,8 +86,8 @@ async def get_safety_status(db: AsyncSession = Depends(get_db)):
     allowlist_count = result.scalar()
     
     return SafetyStatus(
-        shadow_mode=shadow.decode().lower() == "true" if shadow else settings.SHADOW_MODE,
-        human_approval_mode=human.decode().lower() == "true" if human else settings.HUMAN_APPROVAL_MODE,
+        shadow_mode=shadow.lower() == "true" if shadow else settings.SHADOW_MODE,
+        human_approval_mode=human.lower() == "true" if human else settings.HUMAN_APPROVAL_MODE,
         high_confidence_threshold=float(high_t) if high_t else settings.HIGH_CONFIDENCE_THRESHOLD,
         medium_confidence_threshold=float(med_t) if med_t else settings.MEDIUM_CONFIDENCE_THRESHOLD,
         auto_rollback_minutes=int(rollback) if rollback else settings.AUTO_ROLLBACK_MINUTES,
