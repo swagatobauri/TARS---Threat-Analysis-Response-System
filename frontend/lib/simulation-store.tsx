@@ -326,9 +326,9 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
         logsToPush.push(`[THREAT] ${aType.toUpperCase()} engaged → ${dest}`);
       }
 
-      // Schedule AI Agent every 5 ticks
+      // Schedule AI Agent every 12 ticks
       tickCount.current += 1;
-      if (tickCount.current % 5 === 0 && batch.some(e => e.attack_type !== "normal")) {
+      if (tickCount.current % 12 === 0 && batch.some(e => e.attack_type !== "normal")) {
         fetch("/api/agent/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

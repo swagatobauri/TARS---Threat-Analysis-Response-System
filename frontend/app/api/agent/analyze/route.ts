@@ -65,10 +65,19 @@ Analyze this batch. What is happening? Is this a coordinated attack? What kill c
     });
 
     if (!res.ok) {
-      const err = await res.text();
-      console.error("Groq API error:", err);
+      const errText = await res.text();
+      console.error("Groq API error:", errText);
+      
+      let errMsg = `Groq returned ${res.status}`;
+      try {
+        const errJson = JSON.parse(errText);
+        if (errJson.error?.message) {
+          errMsg = errJson.error.message;
+        }
+      } catch (e) {}
+
       return NextResponse.json({
-        analysis: `TARS AGENT ERROR — Groq returned ${res.status}`,
+        analysis: `TARS AGENT ERROR — ${errMsg}`,
         verdict: "ERROR",
         agentActive: false,
       });
