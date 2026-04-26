@@ -58,6 +58,10 @@ celery_app.conf.beat_schedule = {
         "task": "tasks.update_attacker_profiles",
         "schedule": 300.0,               # every 5 minutes
     },
+    "weekly-model-health-check": {
+        "task": "tasks.weekly_model_health_check",
+        "schedule": crontab(day_of_week="sunday", hour=0, minute=0),
+    },
 }
 
 
