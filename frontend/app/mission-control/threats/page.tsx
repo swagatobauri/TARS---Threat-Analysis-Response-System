@@ -235,7 +235,7 @@ export default function ThreatsPage() {
                       <>
                         <p>No threat data yet. Start a simulation.</p>
                         <Link
-                          href="/mission-control/simulation"
+                          href="/war-games"
                           className="inline-block border border-[#cc0000] text-[#cc0000] px-4 py-2 text-[10px] uppercase tracking-widest hover:bg-[#cc0000] hover:text-black transition-colors"
                         >
                           Launch Simulation Engine

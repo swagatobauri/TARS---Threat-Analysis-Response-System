@@ -78,6 +78,33 @@ export function SimulationProvider({ children }: { children: React.ReactNode }) 
     agentActive: false,
   });
 
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("tars_sim_state");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setState(prev => ({
+          ...prev,
+          ...parsed,
+          blockedIps: new Set(parsed.blockedIps || []),
+          isRunning: false // Don't auto-start simulation on refresh
+        }));
+      } catch (e) {
+        console.error("Failed to load sim state", e);
+      }
+    }
+  }, []);
+
+  // Save to localStorage on change
+  useEffect(() => {
+    const { blockedIps, ...rest } = state;
+    localStorage.setItem("tars_sim_state", JSON.stringify({
+      ...rest,
+      blockedIps: Array.from(blockedIps)
+    }));
+  }, [state]);
+
   const pushEvents = useCallback((newEvents: SimEvent[]) => {
     setState(prev => {
       const blockedIps = new Set(prev.blockedIps);
